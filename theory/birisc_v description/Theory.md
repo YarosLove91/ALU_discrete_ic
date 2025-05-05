@@ -1103,18 +1103,24 @@ Dual-port RAM (64 КБ) для хранения данных. Один порт 
 
 riscv_core[с общими модулями]
 ├── dcache
-├── dcache_core
-│ ├── dcache_core_data_ram
-│ └── dcache_core_tag_ram
-├── dcache_axi
-│ ├── dcache_axi_fifo
-│ └── dcache_axi_axi
-├── dcache_mux
-├── dcache_ifpem_mux
-└── dcache_ifpem
-
+│ ├── dcache_if_pmem
+│ │ └── dcache_if_pmem_fifo
+│ ├── dcache_mux
+│ ├── dcache_core
+│ │ ├── dcache_core_tag_ram_0
+│ │ ├── dcache_core_tag_ram_1
+│ │ ├── dcache_core_data_ram_0
+│ │ └── dcache_core_data_ram_1
+│ ├── dcache_axi
+│ │ ├──        dcache_axi_fifo
+│ │ └──        dcache_axi_axi
+│ └── dcache_pmem_mux
+└── icache
+    ├── icache_tag_ram_0
+    ├── icache_tag_ram_1
+    ├── icache_data_ram_0
+    └── icache_data_ram_1
 
 Структурная схема дизайна с использованием кешей представлена на изображении xxx
 
 ![](../birisc_v%20description/Images/riscv_top.png)
-
