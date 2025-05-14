@@ -612,7 +612,7 @@ $C_{4} = 0$ (переполнения нет).
 5. Проанализируйте выходы $C_{1} – C_{4}$, которые подаются на следующие по старшинству микросхемы.
 
 Пример микросхемы  32-разрядного ускоренного переноса - 74882.
-![alt text](https://github.com/YarosLove91/ALU_discrete_ic/blob/screenshots/screnshots/CLA_74882_ALU-32.png?raw=true)
+![alt text](https://github.com/YarosLove91/ALU_discrete_ic/blob/screenshots/screnshots/CLA_74882.png)
 
 На русунке:
 
