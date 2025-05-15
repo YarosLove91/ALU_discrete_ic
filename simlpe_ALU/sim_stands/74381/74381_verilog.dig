@@ -1,0 +1,815 @@
+<?xml version="1.0" encoding="utf-8"?>
+<circuit>
+  <version>2</version>
+  <attributes/>
+  <visualElements>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>A</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>4</int>
+        </entry>
+      </elementAttributes>
+      <pos x="3660" y="800"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>B</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>4</int>
+        </entry>
+      </elementAttributes>
+      <pos x="3660" y="840"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>C_in</string>
+        </entry>
+      </elementAttributes>
+      <pos x="3660" y="920"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>Cmd</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>3</int>
+        </entry>
+      </elementAttributes>
+      <pos x="3660" y="880"/>
+    </visualElement>
+    <visualElement>
+      <elementName>LED</elementName>
+      <elementAttributes/>
+      <pos x="4020" y="800"/>
+    </visualElement>
+    <visualElement>
+      <elementName>LED</elementName>
+      <elementAttributes/>
+      <pos x="4060" y="820"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Out</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>RES</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>4</int>
+        </entry>
+      </elementAttributes>
+      <pos x="4100" y="840"/>
+    </visualElement>
+    <visualElement>
+      <elementName>External</elementName>
+      <elementAttributes>
+        <entry>
+          <string>applicationType</string>
+          <appType>IVERILOG</appType>
+        </entry>
+        <entry>
+          <string>Label</string>
+          <string>alu_74381</string>
+        </entry>
+        <entry>
+          <string>externalInputs</string>
+          <string>A:4,B:4,S:3,Cin</string>
+        </entry>
+        <entry>
+          <string>Width</string>
+          <int>10</int>
+        </entry>
+        <entry>
+          <string>Code</string>
+          <string>module alu_74381 (
+    input [3:0] A, B,
+    input [2:0] S,
+    input Cin,
+    output wire nGP, nGG,
+    output reg [3:0] F
+);
+
+endmodule</string>
+        </entry>
+        <entry>
+          <string>externalOutputs</string>
+          <string>nGP,nGG,F:4</string>
+        </entry>
+      </elementAttributes>
+      <pos x="3740" y="60"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>A</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>16</int>
+        </entry>
+      </elementAttributes>
+      <pos x="3220" y="60"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Splitter</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Input Splitting</string>
+          <string>16</string>
+        </entry>
+        <entry>
+          <string>Output Splitting</string>
+          <string>4,4,4,4</string>
+        </entry>
+      </elementAttributes>
+      <pos x="3280" y="60"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>B</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>16</int>
+        </entry>
+      </elementAttributes>
+      <pos x="3220" y="140"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Splitter</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Input Splitting</string>
+          <string>16</string>
+        </entry>
+        <entry>
+          <string>Output Splitting</string>
+          <string>4,4,4,4</string>
+        </entry>
+      </elementAttributes>
+      <pos x="3280" y="140"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>CnA</string>
+        </entry>
+      </elementAttributes>
+      <pos x="3220" y="-40"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>Cmd</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>3</int>
+        </entry>
+      </elementAttributes>
+      <pos x="3220" y="0"/>
+    </visualElement>
+    <visualElement>
+      <elementName>External</elementName>
+      <elementAttributes>
+        <entry>
+          <string>applicationType</string>
+          <appType>IVERILOG</appType>
+        </entry>
+        <entry>
+          <string>Label</string>
+          <string>alu_74381</string>
+        </entry>
+        <entry>
+          <string>externalInputs</string>
+          <string>A:4,B:4,S:3,Cin</string>
+        </entry>
+        <entry>
+          <string>Width</string>
+          <int>10</int>
+        </entry>
+        <entry>
+          <string>Code</string>
+          <string>module alu_74381 (
+    input [3:0] A, B,
+    input [2:0] S,
+    input Cin,
+    output wire nGP, nGG,
+    output reg [3:0] F
+);
+
+endmodule</string>
+        </entry>
+        <entry>
+          <string>externalOutputs</string>
+          <string>nGP,nGG,F:4</string>
+        </entry>
+      </elementAttributes>
+      <pos x="3740" y="220"/>
+    </visualElement>
+    <visualElement>
+      <elementName>External</elementName>
+      <elementAttributes>
+        <entry>
+          <string>applicationType</string>
+          <appType>IVERILOG</appType>
+        </entry>
+        <entry>
+          <string>Label</string>
+          <string>alu_74381</string>
+        </entry>
+        <entry>
+          <string>externalInputs</string>
+          <string>A:4,B:4,S:3,Cin</string>
+        </entry>
+        <entry>
+          <string>Width</string>
+          <int>10</int>
+        </entry>
+        <entry>
+          <string>Code</string>
+          <string>module alu_74381 (
+    input [3:0] A, B,
+    input [2:0] S,
+    input Cin,
+    output wire nGP, nGG,
+    output reg [3:0] F
+);
+
+endmodule</string>
+        </entry>
+        <entry>
+          <string>externalOutputs</string>
+          <string>nGP,nGG,F:4</string>
+        </entry>
+      </elementAttributes>
+      <pos x="3740" y="400"/>
+    </visualElement>
+    <visualElement>
+      <elementName>External</elementName>
+      <elementAttributes>
+        <entry>
+          <string>applicationType</string>
+          <appType>IVERILOG</appType>
+        </entry>
+        <entry>
+          <string>Label</string>
+          <string>alu_74381</string>
+        </entry>
+        <entry>
+          <string>externalInputs</string>
+          <string>A:4,B:4,S:3,Cin</string>
+        </entry>
+        <entry>
+          <string>Width</string>
+          <int>10</int>
+        </entry>
+        <entry>
+          <string>Code</string>
+          <string>module alu_74381 (
+    input [3:0] A, B,
+    input [2:0] S,
+    input Cin,
+    output wire nGP, nGG,
+    output reg [3:0] F
+);
+
+endmodule</string>
+        </entry>
+        <entry>
+          <string>externalOutputs</string>
+          <string>nGP,nGG,F:4</string>
+        </entry>
+      </elementAttributes>
+      <pos x="3740" y="580"/>
+    </visualElement>
+    <visualElement>
+      <elementName>External</elementName>
+      <elementAttributes>
+        <entry>
+          <string>applicationType</string>
+          <appType>IVERILOG</appType>
+        </entry>
+        <entry>
+          <string>Label</string>
+          <string>cla_ic_74182b</string>
+        </entry>
+        <entry>
+          <string>externalInputs</string>
+          <string>Cn,PB:4,GB:4</string>
+        </entry>
+        <entry>
+          <string>Code</string>
+          <string>module cla_ic_74182b (
+    input[3:0]  PB, 
+    input[3:0]  GB,
+    input   Cn,
+    output	PBo, GBo, Cnx, Cny, Cnz
+);
+    assign PBo = (  PB[0]   |   PB[1]   |   PB[2]   |   PB[3]);
+    assign GBo = (  (GB[0]  &amp;   GB[1]   &amp;   GB[2]   &amp;   GB[3]) | 
+                    (PB[1]  &amp;   GB[1]   &amp;   GB[2]   &amp;   GB[3]) | 
+                    (PB[2]  &amp;   GB[2]   &amp;   GB[3]) | 
+                    (PB[3]  &amp;   GB[3]));
+
+    assign Cnx = ~( (PB[0]  &amp;   GB[0]) | 
+                    (GB[0]  &amp;   ~Cn));
+    assign Cny = ~( (PB[1]  &amp;   GB[1]) | 
+                    (PB[0]  &amp;   GB[0]   &amp;   GB[1])  |
+                    (GB[0]  &amp;   GB[1]   &amp;   ~Cn));
+    assign Cnz = ~( (PB[2]  &amp;   GB[2]) | 
+                    (PB[1]  &amp;   GB[1]   &amp;   GB[2])  |
+                    (PB[0]  &amp;   GB[0]   &amp;   GB[1]   &amp;   GB[2])  | 
+                    (GB[0]  &amp;   GB[1]   &amp;   GB[2]   &amp;   ~Cn));
+endmodule</string>
+        </entry>
+        <entry>
+          <string>externalOutputs</string>
+          <string>PBo,GBo,Cnx,Cny,Cnz</string>
+        </entry>
+        <entry>
+          <string>Width</string>
+          <int>10</int>
+        </entry>
+      </elementAttributes>
+      <pos x="4280" y="100"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Splitter</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Input Splitting</string>
+          <string>1,1,1,1</string>
+        </entry>
+        <entry>
+          <string>Output Splitting</string>
+          <string>4</string>
+        </entry>
+      </elementAttributes>
+      <pos x="4140" y="120"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Splitter</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Input Splitting</string>
+          <string>1,1,1,1</string>
+        </entry>
+        <entry>
+          <string>Output Splitting</string>
+          <string>4</string>
+        </entry>
+      </elementAttributes>
+      <pos x="4140" y="320"/>
+    </visualElement>
+    <visualElement>
+      <elementName>External</elementName>
+      <elementAttributes>
+        <entry>
+          <string>applicationType</string>
+          <appType>IVERILOG</appType>
+        </entry>
+        <entry>
+          <string>Label</string>
+          <string>alu_74381</string>
+        </entry>
+        <entry>
+          <string>externalInputs</string>
+          <string>A:4,B:4,S:3,Cin</string>
+        </entry>
+        <entry>
+          <string>Width</string>
+          <int>10</int>
+        </entry>
+        <entry>
+          <string>Code</string>
+          <string>module alu_74381 (
+    input [3:0] A, B,
+    input [2:0] S,
+    input Cin,
+    output wire nGP, nGG,
+    output reg [3:0] F
+);
+
+endmodule</string>
+        </entry>
+        <entry>
+          <string>externalOutputs</string>
+          <string>nGP,nGG,F:4</string>
+        </entry>
+      </elementAttributes>
+      <pos x="3760" y="800"/>
+    </visualElement>
+  </visualElements>
+  <wires>
+    <wire>
+      <p1 x="3220" y="0"/>
+      <p2 x="3580" y="0"/>
+    </wire>
+    <wire>
+      <p1 x="3640" y="640"/>
+      <p2 x="3740" y="640"/>
+    </wire>
+    <wire>
+      <p1 x="4060" y="320"/>
+      <p2 x="4140" y="320"/>
+    </wire>
+    <wire>
+      <p1 x="4160" y="320"/>
+      <p2 x="4240" y="320"/>
+    </wire>
+    <wire>
+      <p1 x="3580" y="260"/>
+      <p2 x="3740" y="260"/>
+    </wire>
+    <wire>
+      <p1 x="3460" y="580"/>
+      <p2 x="3740" y="580"/>
+    </wire>
+    <wire>
+      <p1 x="3940" y="580"/>
+      <p2 x="4000" y="580"/>
+    </wire>
+    <wire>
+      <p1 x="3300" y="200"/>
+      <p2 x="3380" y="200"/>
+    </wire>
+    <wire>
+      <p1 x="3660" y="840"/>
+      <p2 x="3680" y="840"/>
+    </wire>
+    <wire>
+      <p1 x="3700" y="840"/>
+      <p2 x="3760" y="840"/>
+    </wire>
+    <wire>
+      <p1 x="3960" y="840"/>
+      <p2 x="4100" y="840"/>
+    </wire>
+    <wire>
+      <p1 x="3960" y="140"/>
+      <p2 x="4140" y="140"/>
+    </wire>
+    <wire>
+      <p1 x="3300" y="140"/>
+      <p2 x="3540" y="140"/>
+    </wire>
+    <wire>
+      <p1 x="3220" y="140"/>
+      <p2 x="3280" y="140"/>
+    </wire>
+    <wire>
+      <p1 x="4480" y="140"/>
+      <p2 x="4500" y="140"/>
+    </wire>
+    <wire>
+      <p1 x="4240" y="140"/>
+      <p2 x="4280" y="140"/>
+    </wire>
+    <wire>
+      <p1 x="3660" y="460"/>
+      <p2 x="3740" y="460"/>
+    </wire>
+    <wire>
+      <p1 x="3680" y="-80"/>
+      <p2 x="4500" y="-80"/>
+    </wire>
+    <wire>
+      <p1 x="3480" y="400"/>
+      <p2 x="3740" y="400"/>
+    </wire>
+    <wire>
+      <p1 x="3940" y="400"/>
+      <p2 x="3980" y="400"/>
+    </wire>
+    <wire>
+      <p1 x="3940" y="80"/>
+      <p2 x="4060" y="80"/>
+    </wire>
+    <wire>
+      <p1 x="3540" y="80"/>
+      <p2 x="3740" y="80"/>
+    </wire>
+    <wire>
+      <p1 x="3300" y="80"/>
+      <p2 x="3500" y="80"/>
+    </wire>
+    <wire>
+      <p1 x="4040" y="340"/>
+      <p2 x="4140" y="340"/>
+    </wire>
+    <wire>
+      <p1 x="3660" y="920"/>
+      <p2 x="3720" y="920"/>
+    </wire>
+    <wire>
+      <p1 x="3680" y="280"/>
+      <p2 x="3740" y="280"/>
+    </wire>
+    <wire>
+      <p1 x="3940" y="600"/>
+      <p2 x="4060" y="600"/>
+    </wire>
+    <wire>
+      <p1 x="3380" y="600"/>
+      <p2 x="3740" y="600"/>
+    </wire>
+    <wire>
+      <p1 x="3720" y="860"/>
+      <p2 x="3760" y="860"/>
+    </wire>
+    <wire>
+      <p1 x="3500" y="220"/>
+      <p2 x="3740" y="220"/>
+    </wire>
+    <wire>
+      <p1 x="3940" y="220"/>
+      <p2 x="3960" y="220"/>
+    </wire>
+    <wire>
+      <p1 x="3660" y="800"/>
+      <p2 x="3760" y="800"/>
+    </wire>
+    <wire>
+      <p1 x="3960" y="800"/>
+      <p2 x="4020" y="800"/>
+    </wire>
+    <wire>
+      <p1 x="3980" y="160"/>
+      <p2 x="4140" y="160"/>
+    </wire>
+    <wire>
+      <p1 x="3300" y="160"/>
+      <p2 x="3420" y="160"/>
+    </wire>
+    <wire>
+      <p1 x="4480" y="160"/>
+      <p2 x="4520" y="160"/>
+    </wire>
+    <wire>
+      <p1 x="3660" y="-100"/>
+      <p2 x="4520" y="-100"/>
+    </wire>
+    <wire>
+      <p1 x="3940" y="420"/>
+      <p2 x="4040" y="420"/>
+    </wire>
+    <wire>
+      <p1 x="3400" y="420"/>
+      <p2 x="3740" y="420"/>
+    </wire>
+    <wire>
+      <p1 x="3580" y="100"/>
+      <p2 x="3740" y="100"/>
+    </wire>
+    <wire>
+      <p1 x="3300" y="100"/>
+      <p2 x="3480" y="100"/>
+    </wire>
+    <wire>
+      <p1 x="4240" y="100"/>
+      <p2 x="4280" y="100"/>
+    </wire>
+    <wire>
+      <p1 x="3220" y="-40"/>
+      <p2 x="3720" y="-40"/>
+    </wire>
+    <wire>
+      <p1 x="3720" y="-40"/>
+      <p2 x="4240" y="-40"/>
+    </wire>
+    <wire>
+      <p1 x="4040" y="360"/>
+      <p2 x="4140" y="360"/>
+    </wire>
+    <wire>
+      <p1 x="3580" y="620"/>
+      <p2 x="3740" y="620"/>
+    </wire>
+    <wire>
+      <p1 x="3660" y="880"/>
+      <p2 x="3700" y="880"/>
+    </wire>
+    <wire>
+      <p1 x="3940" y="240"/>
+      <p2 x="4040" y="240"/>
+    </wire>
+    <wire>
+      <p1 x="3420" y="240"/>
+      <p2 x="3740" y="240"/>
+    </wire>
+    <wire>
+      <p1 x="3680" y="820"/>
+      <p2 x="3760" y="820"/>
+    </wire>
+    <wire>
+      <p1 x="3960" y="820"/>
+      <p2 x="4060" y="820"/>
+    </wire>
+    <wire>
+      <p1 x="3300" y="180"/>
+      <p2 x="3400" y="180"/>
+    </wire>
+    <wire>
+      <p1 x="4000" y="180"/>
+      <p2 x="4140" y="180"/>
+    </wire>
+    <wire>
+      <p1 x="4480" y="180"/>
+      <p2 x="4540" y="180"/>
+    </wire>
+    <wire>
+      <p1 x="3640" y="-120"/>
+      <p2 x="4540" y="-120"/>
+    </wire>
+    <wire>
+      <p1 x="3580" y="440"/>
+      <p2 x="3740" y="440"/>
+    </wire>
+    <wire>
+      <p1 x="4100" y="120"/>
+      <p2 x="4140" y="120"/>
+    </wire>
+    <wire>
+      <p1 x="3300" y="120"/>
+      <p2 x="3460" y="120"/>
+    </wire>
+    <wire>
+      <p1 x="3720" y="120"/>
+      <p2 x="3740" y="120"/>
+    </wire>
+    <wire>
+      <p1 x="4160" y="120"/>
+      <p2 x="4280" y="120"/>
+    </wire>
+    <wire>
+      <p1 x="3940" y="60"/>
+      <p2 x="4100" y="60"/>
+    </wire>
+    <wire>
+      <p1 x="3220" y="60"/>
+      <p2 x="3280" y="60"/>
+    </wire>
+    <wire>
+      <p1 x="3300" y="60"/>
+      <p2 x="3740" y="60"/>
+    </wire>
+    <wire>
+      <p1 x="4060" y="380"/>
+      <p2 x="4140" y="380"/>
+    </wire>
+    <wire>
+      <p1 x="4000" y="180"/>
+      <p2 x="4000" y="580"/>
+    </wire>
+    <wire>
+      <p1 x="3680" y="-80"/>
+      <p2 x="3680" y="280"/>
+    </wire>
+    <wire>
+      <p1 x="3680" y="820"/>
+      <p2 x="3680" y="840"/>
+    </wire>
+    <wire>
+      <p1 x="3460" y="120"/>
+      <p2 x="3460" y="580"/>
+    </wire>
+    <wire>
+      <p1 x="4100" y="60"/>
+      <p2 x="4100" y="120"/>
+    </wire>
+    <wire>
+      <p1 x="3720" y="-40"/>
+      <p2 x="3720" y="120"/>
+    </wire>
+    <wire>
+      <p1 x="3720" y="860"/>
+      <p2 x="3720" y="920"/>
+    </wire>
+    <wire>
+      <p1 x="3400" y="180"/>
+      <p2 x="3400" y="420"/>
+    </wire>
+    <wire>
+      <p1 x="4040" y="360"/>
+      <p2 x="4040" y="420"/>
+    </wire>
+    <wire>
+      <p1 x="4040" y="240"/>
+      <p2 x="4040" y="340"/>
+    </wire>
+    <wire>
+      <p1 x="4520" y="-100"/>
+      <p2 x="4520" y="160"/>
+    </wire>
+    <wire>
+      <p1 x="3980" y="160"/>
+      <p2 x="3980" y="400"/>
+    </wire>
+    <wire>
+      <p1 x="3660" y="-100"/>
+      <p2 x="3660" y="460"/>
+    </wire>
+    <wire>
+      <p1 x="3500" y="80"/>
+      <p2 x="3500" y="220"/>
+    </wire>
+    <wire>
+      <p1 x="4240" y="140"/>
+      <p2 x="4240" y="320"/>
+    </wire>
+    <wire>
+      <p1 x="4240" y="-40"/>
+      <p2 x="4240" y="100"/>
+    </wire>
+    <wire>
+      <p1 x="3700" y="840"/>
+      <p2 x="3700" y="880"/>
+    </wire>
+    <wire>
+      <p1 x="4500" y="-80"/>
+      <p2 x="4500" y="140"/>
+    </wire>
+    <wire>
+      <p1 x="3540" y="80"/>
+      <p2 x="3540" y="140"/>
+    </wire>
+    <wire>
+      <p1 x="3380" y="200"/>
+      <p2 x="3380" y="600"/>
+    </wire>
+    <wire>
+      <p1 x="3480" y="100"/>
+      <p2 x="3480" y="400"/>
+    </wire>
+    <wire>
+      <p1 x="3640" y="-120"/>
+      <p2 x="3640" y="640"/>
+    </wire>
+    <wire>
+      <p1 x="3960" y="140"/>
+      <p2 x="3960" y="220"/>
+    </wire>
+    <wire>
+      <p1 x="4060" y="380"/>
+      <p2 x="4060" y="600"/>
+    </wire>
+    <wire>
+      <p1 x="4060" y="80"/>
+      <p2 x="4060" y="320"/>
+    </wire>
+    <wire>
+      <p1 x="3420" y="160"/>
+      <p2 x="3420" y="240"/>
+    </wire>
+    <wire>
+      <p1 x="3580" y="0"/>
+      <p2 x="3580" y="100"/>
+    </wire>
+    <wire>
+      <p1 x="3580" y="440"/>
+      <p2 x="3580" y="620"/>
+    </wire>
+    <wire>
+      <p1 x="3580" y="260"/>
+      <p2 x="3580" y="440"/>
+    </wire>
+    <wire>
+      <p1 x="3580" y="100"/>
+      <p2 x="3580" y="260"/>
+    </wire>
+    <wire>
+      <p1 x="4540" y="-120"/>
+      <p2 x="4540" y="180"/>
+    </wire>
+  </wires>
+  <measurementOrdering/>
+</circuit>
