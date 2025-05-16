@@ -343,36 +343,91 @@ __Классификация АЛУ__
 
 #### А вот теперь большой жирный раздел про то как устроена 74181 с красочным описанием входов, выходов, системы команд, как ее можно каскадировать .....
 
-```sv
-// f - fixed. Без конструкции generate
-module alu_74181f(
-    input [3:0]s,
-    input Cin, M,
-    input [3:0] a, b,
-    output reg [3:0] y
+```verilog
+// 4-bit arithmetic logic unit (optimized version)
+module alu_74181
+(
+    input [3:0] Select,
+    input Mode,
+    input C_in,
+    input [WIDTH-1:0] A_bar,
+    input [WIDTH-1:0] B_bar,
+    output CP_bar,
+    output CG_bar,
+    output Equal,
+    output C_out,
+    output [WIDTH-1:0] F_bar
 );
 
-    reg [3:0] p, g;
+    //------------------------------------------------//
+	reg CP_computed;
+	reg CG_computed;
+	wire Equal_computed;
+	reg C_computed;
+	reg [WIDTH-1:0] F_computed;
+	wire [WIDTH-1:0] P_internal;
+	wire [WIDTH-1:0] G_internal;
+	wire [WIDTH-1:0] C_internal;
+	wire [WIDTH-1:0] CG_internal;
+    
+    // first layer: internal propagate and generate signals from each A, B bit pair
+    //              used for all further computations (function output F, carry output C,
+    //              carry lookahead outputs CP and CG)
+    //
+	assign P_internal[i] = ~(A_bar[i] & ~B_bar[i] & Select[2] | A_bar[i] & B_bar[i] & Select[3]);
+	assign G_internal[i] = ~(A_bar[i] | B_bar[i] & Select[0] | ~B_bar[i] & Select[1]);
+    
+    // second layer: internal carry signals from the carry in and propagate and generate signals,
+    //               used for computation of F bits (these are for arithmetic functions only;
+    //               for logic functions the Mode signal inhibits all C_internal outputs)
+    //
+    // the generated code has this structure:
+    C_internal[0] = ~(C_in);
+    C_internal[1] = ~(C_in & P_internal[0] | G_internal[0]);
+    C_internal[2] = ~(C_in & P_internal[0] & P_internal[1] |
+                                             P_internal[1] & G_internal[0] |
+                                                            G_internal[1]);
 
-    always @(*) begin
-        p[0] <= ~(a[0] | (s[0] & b[0]) | (s[1] & ~b[0]));
-        p[1] <= ~(a[1] | (s[0] & b[1]) | (s[1] & ~b[1]));
-        p[2] <= ~(a[2] | (s[0] & b[2]) | (s[1] & ~b[2]));
-        p[3] <= ~(a[3] | (s[0] & b[3]) | (s[1] & ~b[3]));
+    C_internal[3] = ~(C_in & P_internal[0] & P_internal[1] & P_internal[2] |
+                                             P_internal[1] & P_internal[2] & G_internal[0] |
+                                                             P_internal[2] & G_internal[1] |
+                                                                             G_internal[2]);
+    
 
-        g[0] <= ~((a[0] & ~b[0] & s[2]) | (a[0] & b[0] & s[3]));
-        g[1] <= ~((a[1] & ~b[1] & s[2]) | (a[1] & b[1] & s[3]));
-        g[2] <= ~((a[2] & ~b[2] & s[2]) | (a[2] & b[2] & s[3]));
-        g[3] <= ~((a[3] & ~b[3] & s[2]) | (a[3] & b[3] & s[3]));
+    // second layer, separate section: internal carry generate signals from the
+	//                                 propagate and generate signals, used for computation of:
+	//                                 carry output C, carry lookahead output CG
+	//
+	// the generated code has this structure (terms are then joined by |):
+	CG_internal[0] = P_internal[1] & P_internal[2] & P_internal[3] & G_internal[0];
+	CG_internal[1] =                 P_internal[2] & P_internal[3] & G_internal[1];
+	CG_internal[2] =                                 P_internal[3] & G_internal[2];
+	CG_internal[3] =                                                 G_internal[3];
+	
+    always @(*)	begin
+	// third layer: carry lookahead bits aggregated from the above terms
+	CP_computed = ~(&P_internal);
+	CG_computed = ~(|CG_internal);
 
-        y[0] = (p[0] ^ g[0]) ^ ~(~Cin & ~M);
-        y[1] = (p[1] ^ g[1]) ^ ~((~Cin & ~M & g[0]) | (~M & p[0]));
-        y[2] = (p[2] ^ g[2]) ^ ~((~Cin & ~M & g[0] & g[1]) | (~M & p[1]) | (~M & p[0] & g[1]));
-        y[3] = (p[3] ^ g[3]) ^ ~((~Cin & ~M & g[0] & g[1] & g[2]) | (~M & p[2]) | (~M & p[1] & g[2]) | (~M & p[0] & g[1] & g[2]));
-    end
+	// third layer: carry bit
+	C_computed = C_in & (&P_internal) | (|CG_internal);
 
+	// third layer: F bits
+	F_computed = P_internal ^ G_internal ^ C_internal;
+	end
 
-endmodule // alu74181
+	// output
+	assign Equal_computed = &F_computed;    
+
+    // Output calculations
+    assign CP_bar = ~(&P_internal);
+    assign CG_bar = ~(|CG_internal);
+    assign C_out = (C_in & (&P_internal)) | (|CG_internal);
+    assign F_bar = P_internal ^ G_internal ^ C_internal;
+    assign Equal = &F_bar;
+
+endmodule
+
 ```
 
 ### 2.3 Способы повышения разрядности цифровых операционных устройства
