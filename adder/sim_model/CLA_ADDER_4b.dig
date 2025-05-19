@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<circuit>
+  <version>2</version>
+  <attributes/>
+  <visualElements>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>B_[3:0]</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>4</int>
+        </entry>
+      </elementAttributes>
+      <pos x="-3200" y="-1020"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>A_[3:0]</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>4</int>
+        </entry>
+      </elementAttributes>
+      <pos x="-3200" y="-1060"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Out</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>GP</string>
+        </entry>
+      </elementAttributes>
+      <pos x="-2760" y="-980"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Out</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>Summ_[3:0]</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>4</int>
+        </entry>
+      </elementAttributes>
+      <pos x="-2760" y="-1060"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Out</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>GG</string>
+        </entry>
+      </elementAttributes>
+      <pos x="-2760" y="-940"/>
+    </visualElement>
+    <visualElement>
+      <elementName>External</elementName>
+      <elementAttributes>
+        <entry>
+          <string>applicationType</string>
+          <appType>IVERILOG</appType>
+        </entry>
+        <entry>
+          <string>Label</string>
+          <string>fulladd4</string>
+        </entry>
+        <entry>
+          <string>externalInputs</string>
+          <string>a:4,b:4,Cin</string>
+        </entry>
+        <entry>
+          <string>Code</string>
+          <string>module fulladd4(
+    input Cin,
+    input [3:0] a, b,
+    output [3:0] sum,
+    output Cout,
+    output wire GP, GG
+);
+    wire [3:0] p, g;
+    wire [4:0] c; // Изменено на [4:0] для включения Cin
+
+    assign p = a ^ b;
+    assign g = a &amp; b;
+
+    assign c[0] = Cin;
+    genvar i;
+        generate
+            for (i = 0; i &lt; 4; i = i + 1) begin : carry_gen
+                assign c[i+1] = g[i] | (p[i] &amp; c[i]);
+            end
+        endgenerate
+
+    assign sum = p ^ c[3:0];
+    assign Cout = c[4];
+
+    // Групповые сигналы Propagate и Generate для всего блока
+    assign GP = &amp;p;
+    assign GG = g[3] | (p[3] &amp; g[2]) | (p[3] &amp; p[2] &amp; g[1]) | (p[3] &amp; p[2] &amp; p[1] &amp; g[0]);
+
+endmodule</string>
+        </entry>
+        <entry>
+          <string>Width</string>
+          <int>10</int>
+        </entry>
+        <entry>
+          <string>externalOutputs</string>
+          <string>sum:4,Cout,GP,GG</string>
+        </entry>
+      </elementAttributes>
+      <pos x="-3120" y="-1060"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>C_in</string>
+        </entry>
+      </elementAttributes>
+      <pos x="-3200" y="-980"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Out</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>Cout</string>
+        </entry>
+      </elementAttributes>
+      <pos x="-2760" y="-1020"/>
+    </visualElement>
+  </visualElements>
+  <wires>
+    <wire>
+      <p1 x="-2820" y="-980"/>
+      <p2 x="-2760" y="-980"/>
+    </wire>
+    <wire>
+      <p1 x="-3200" y="-980"/>
+      <p2 x="-3140" y="-980"/>
+    </wire>
+    <wire>
+      <p1 x="-2920" y="-1060"/>
+      <p2 x="-2760" y="-1060"/>
+    </wire>
+    <wire>
+      <p1 x="-3200" y="-1060"/>
+      <p2 x="-3120" y="-1060"/>
+    </wire>
+    <wire>
+      <p1 x="-2920" y="-1000"/>
+      <p2 x="-2840" y="-1000"/>
+    </wire>
+    <wire>
+      <p1 x="-2840" y="-940"/>
+      <p2 x="-2760" y="-940"/>
+    </wire>
+    <wire>
+      <p1 x="-2800" y="-1020"/>
+      <p2 x="-2760" y="-1020"/>
+    </wire>
+    <wire>
+      <p1 x="-2920" y="-1020"/>
+      <p2 x="-2820" y="-1020"/>
+    </wire>
+    <wire>
+      <p1 x="-3200" y="-1020"/>
+      <p2 x="-3160" y="-1020"/>
+    </wire>
+    <wire>
+      <p1 x="-3140" y="-1020"/>
+      <p2 x="-3120" y="-1020"/>
+    </wire>
+    <wire>
+      <p1 x="-2920" y="-1040"/>
+      <p2 x="-2800" y="-1040"/>
+    </wire>
+    <wire>
+      <p1 x="-3160" y="-1040"/>
+      <p2 x="-3120" y="-1040"/>
+    </wire>
+    <wire>
+      <p1 x="-2820" y="-1020"/>
+      <p2 x="-2820" y="-980"/>
+    </wire>
+    <wire>
+      <p1 x="-3140" y="-1020"/>
+      <p2 x="-3140" y="-980"/>
+    </wire>
+    <wire>
+      <p1 x="-2840" y="-1000"/>
+      <p2 x="-2840" y="-940"/>
+    </wire>
+    <wire>
+      <p1 x="-3160" y="-1040"/>
+      <p2 x="-3160" y="-1020"/>
+    </wire>
+    <wire>
+      <p1 x="-2800" y="-1040"/>
+      <p2 x="-2800" y="-1020"/>
+    </wire>
+  </wires>
+  <measurementOrdering/>
+</circuit>

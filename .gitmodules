@@ -1,0 +1,8 @@
+[submodule "Lab_2/src/virtual_stands/DE2_115"]
+	path = Lab_2/src/virtual_stands/DE2_115
+	url = git@github.com:YarosLove91/Virtual_DE_stands.git
+	branch = virtual_stand_DE2_115
+[submodule "Lab_2/src/virtual_stands/DE10_LITE"]
+	path = Lab_2/src/virtual_stands/DE10_LITE
+	url = git@github.com:YarosLove91/Virtual_DE_stands.git
+	branch = virtual_stand_DE10_LITE

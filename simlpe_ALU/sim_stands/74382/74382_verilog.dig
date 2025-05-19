@@ -1,0 +1,766 @@
+<?xml version="1.0" encoding="utf-8"?>
+<circuit>
+  <version>2</version>
+  <attributes/>
+  <visualElements>
+    <visualElement>
+      <elementName>External</elementName>
+      <elementAttributes>
+        <entry>
+          <string>applicationType</string>
+          <appType>IVERILOG</appType>
+        </entry>
+        <entry>
+          <string>Label</string>
+          <string>alu_74382</string>
+        </entry>
+        <entry>
+          <string>externalInputs</string>
+          <string>A:4,B:4,S:3,Cin</string>
+        </entry>
+        <entry>
+          <string>Width</string>
+          <int>10</int>
+        </entry>
+        <entry>
+          <string>Code</string>
+          <string>module alu_74382 (
+    input [3:0] A, B,
+    input [2:0] S,
+    input Cin,
+    output reg Cout, Ovr,
+    output reg [3:0] F
+);
+
+always @(*)
+    case (S)
+        0: begin
+            F = 4&apos;b0000;
+            Cout = 1&apos;b0;
+            Ovr = 1&apos;b0;    
+        end
+        1: begin
+            {Cout, F} = A - B + Cin;
+            Ovr = ((A[3]^B[3])&amp;(B[3]^F[3]));
+            // Еще вариант реализации дополнения до двух
+            // {Cout, F} = A + (~B) + Cin;
+            //Ovr = (~A[3] &amp; B[3] &amp; ~F[3]) | (A[3] &amp; ~B[3] &amp; F[3]);
+        end
+        2: begin
+            {Cout, F} = B - A + Cin;
+            Ovr = ((A[3]^B[3])&amp;(B[3]^F[3]));
+            //  {Cout, F} = B + (~A) + Cin;
+            //Ovr = (A[3] &amp; ~B[3] &amp; ~F[3]) | (~A[3] &amp; B[3] &amp; F[3]);
+        end
+        3: begin
+            {Cout, F} = A + B + Cin;
+            //OVR = (A[3] &amp; B[3] &amp; ~F[3]) | (~A[3] &amp; ~B[3] &amp; F[3]);
+            Ovr = (!(A[3]^B[3]))&amp;(B[3]^F[3]);
+        end
+        4: begin
+            F = A ^ B;
+            Ovr = (F == 4&apos;b1111) ? Cin : 1&apos;b0;
+            Cout = Ovr;
+        end
+        5: begin
+            F = A | B;
+            Ovr = (F == 4&apos;b1111) ? Cin : 1&apos;b0;
+            Cout = Ovr;
+        end
+        6: begin
+            F = A &amp; B;
+            Ovr = (F == 4&apos;b1111) ? Cin : 1&apos;b0;
+            Cout =  Ovr;
+        end
+        7: begin
+            F = 4&apos;b1111;
+            Ovr = Cin;
+            Cout = Ovr;
+        end
+    endcase
+
+endmodule</string>
+        </entry>
+        <entry>
+          <string>externalOutputs</string>
+          <string>Cout,Ovr,F:4</string>
+        </entry>
+      </elementAttributes>
+      <pos x="3360" y="80"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>A</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>16</int>
+        </entry>
+      </elementAttributes>
+      <pos x="2960" y="80"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Splitter</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Input Splitting</string>
+          <string>16</string>
+        </entry>
+        <entry>
+          <string>Output Splitting</string>
+          <string>4,4,4,4</string>
+        </entry>
+      </elementAttributes>
+      <pos x="3020" y="80"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>B</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>16</int>
+        </entry>
+      </elementAttributes>
+      <pos x="2960" y="180"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Splitter</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Input Splitting</string>
+          <string>16</string>
+        </entry>
+        <entry>
+          <string>Output Splitting</string>
+          <string>4,4,4,4</string>
+        </entry>
+      </elementAttributes>
+      <pos x="3020" y="180"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>CnA</string>
+        </entry>
+      </elementAttributes>
+      <pos x="2960" y="-40"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>Cmd</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>3</int>
+        </entry>
+      </elementAttributes>
+      <pos x="2960" y="20"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Splitter</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Input Splitting</string>
+          <string>4,4,4,4,1</string>
+        </entry>
+        <entry>
+          <string>Output Splitting</string>
+          <string>17</string>
+        </entry>
+      </elementAttributes>
+      <pos x="3780" y="340"/>
+    </visualElement>
+    <visualElement>
+      <elementName>External</elementName>
+      <elementAttributes>
+        <entry>
+          <string>applicationType</string>
+          <appType>IVERILOG</appType>
+        </entry>
+        <entry>
+          <string>Label</string>
+          <string>alu_74382</string>
+        </entry>
+        <entry>
+          <string>externalInputs</string>
+          <string>A:4,B:4,S:3,Cin</string>
+        </entry>
+        <entry>
+          <string>Width</string>
+          <int>10</int>
+        </entry>
+        <entry>
+          <string>Code</string>
+          <string>module alu_74382 (
+    input [3:0] A, B,
+    input [2:0] S,
+    input Cin,
+    output reg Cout, Ovr,
+    output reg [3:0] F
+);
+
+always @(*)
+    case (S)
+        0: begin
+            F = 4&apos;b0000;
+            Cout = 1&apos;b0;
+            Ovr = 1&apos;b0;    
+        end
+        1: begin
+            {Cout, F} = A - B + Cin;
+            Ovr = ((A[3]^B[3])&amp;(B[3]^F[3]));
+            // Еще вариант реализации дополнения до двух
+            // {Cout, F} = A + (~B) + Cin;
+            //Ovr = (~A[3] &amp; B[3] &amp; ~F[3]) | (A[3] &amp; ~B[3] &amp; F[3]);
+        end
+        2: begin
+            {Cout, F} = B - A + Cin;
+            Ovr = ((A[3]^B[3])&amp;(B[3]^F[3]));
+            //  {Cout, F} = B + (~A) + Cin;
+            //Ovr = (A[3] &amp; ~B[3] &amp; ~F[3]) | (~A[3] &amp; B[3] &amp; F[3]);
+        end
+        3: begin
+            {Cout, F} = A + B + Cin;
+            //OVR = (A[3] &amp; B[3] &amp; ~F[3]) | (~A[3] &amp; ~B[3] &amp; F[3]);
+            Ovr = (!(A[3]^B[3]))&amp;(B[3]^F[3]);
+        end
+        4: begin
+            F = A ^ B;
+            Ovr = (F == 4&apos;b1111) ? Cin : 1&apos;b0;
+            Cout = Ovr;
+        end
+        5: begin
+            F = A | B;
+            Ovr = (F == 4&apos;b1111) ? Cin : 1&apos;b0;
+            Cout = Ovr;
+        end
+        6: begin
+            F = A &amp; B;
+            Ovr = (F == 4&apos;b1111) ? Cin : 1&apos;b0;
+            Cout =  Ovr;
+        end
+        7: begin
+            F = 4&apos;b1111;
+            Ovr = Cin;
+            Cout = Ovr;
+        end
+    endcase
+
+endmodule</string>
+        </entry>
+        <entry>
+          <string>externalOutputs</string>
+          <string>Cout,Ovr,F:4</string>
+        </entry>
+      </elementAttributes>
+      <pos x="3360" y="260"/>
+    </visualElement>
+    <visualElement>
+      <elementName>External</elementName>
+      <elementAttributes>
+        <entry>
+          <string>applicationType</string>
+          <appType>IVERILOG</appType>
+        </entry>
+        <entry>
+          <string>Label</string>
+          <string>alu_74382</string>
+        </entry>
+        <entry>
+          <string>externalInputs</string>
+          <string>A:4,B:4,S:3,Cin</string>
+        </entry>
+        <entry>
+          <string>Width</string>
+          <int>10</int>
+        </entry>
+        <entry>
+          <string>Code</string>
+          <string>module alu_74382 (
+    input [3:0] A, B,
+    input [2:0] S,
+    input Cin,
+    output reg Cout, Ovr,
+    output reg [3:0] F
+);
+
+always @(*)
+    case (S)
+        0: begin
+            F = 4&apos;b0000;
+            Cout = 1&apos;b0;
+            Ovr = 1&apos;b0;    
+        end
+        1: begin
+            {Cout, F} = A - B + Cin;
+            Ovr = ((A[3]^B[3])&amp;(B[3]^F[3]));
+            // Еще вариант реализации дополнения до двух
+            // {Cout, F} = A + (~B) + Cin;
+            //Ovr = (~A[3] &amp; B[3] &amp; ~F[3]) | (A[3] &amp; ~B[3] &amp; F[3]);
+        end
+        2: begin
+            {Cout, F} = B - A + Cin;
+            Ovr = ((A[3]^B[3])&amp;(B[3]^F[3]));
+            //  {Cout, F} = B + (~A) + Cin;
+            //Ovr = (A[3] &amp; ~B[3] &amp; ~F[3]) | (~A[3] &amp; B[3] &amp; F[3]);
+        end
+        3: begin
+            {Cout, F} = A + B + Cin;
+            //OVR = (A[3] &amp; B[3] &amp; ~F[3]) | (~A[3] &amp; ~B[3] &amp; F[3]);
+            Ovr = (!(A[3]^B[3]))&amp;(B[3]^F[3]);
+        end
+        4: begin
+            F = A ^ B;
+            Ovr = (F == 4&apos;b1111) ? Cin : 1&apos;b0;
+            Cout = Ovr;
+        end
+        5: begin
+            F = A | B;
+            Ovr = (F == 4&apos;b1111) ? Cin : 1&apos;b0;
+            Cout = Ovr;
+        end
+        6: begin
+            F = A &amp; B;
+            Ovr = (F == 4&apos;b1111) ? Cin : 1&apos;b0;
+            Cout =  Ovr;
+        end
+        7: begin
+            F = 4&apos;b1111;
+            Ovr = Cin;
+            Cout = Ovr;
+        end
+    endcase
+
+endmodule</string>
+        </entry>
+        <entry>
+          <string>externalOutputs</string>
+          <string>Cout,Ovr,F:4</string>
+        </entry>
+      </elementAttributes>
+      <pos x="3360" y="440"/>
+    </visualElement>
+    <visualElement>
+      <elementName>External</elementName>
+      <elementAttributes>
+        <entry>
+          <string>applicationType</string>
+          <appType>IVERILOG</appType>
+        </entry>
+        <entry>
+          <string>Label</string>
+          <string>alu_74382</string>
+        </entry>
+        <entry>
+          <string>externalInputs</string>
+          <string>A:4,B:4,S:3,Cin</string>
+        </entry>
+        <entry>
+          <string>Width</string>
+          <int>10</int>
+        </entry>
+        <entry>
+          <string>Code</string>
+          <string>module alu_74382 (
+    input [3:0] A, B,
+    input [2:0] S,
+    input Cin,
+    output reg Cout, Ovr,
+    output reg [3:0] F
+);
+
+always @(*)
+    case (S)
+        0: begin
+            F = 4&apos;b0000;
+            Cout = 1&apos;b0;
+            Ovr = 1&apos;b0;    
+        end
+        1: begin
+            {Cout, F} = A - B + Cin;
+            Ovr = ((A[3]^B[3])&amp;(B[3]^F[3]));
+            // Еще вариант реализации дополнения до двух
+            // {Cout, F} = A + (~B) + Cin;
+            //Ovr = (~A[3] &amp; B[3] &amp; ~F[3]) | (A[3] &amp; ~B[3] &amp; F[3]);
+        end
+        2: begin
+            {Cout, F} = B - A + Cin;
+            Ovr = ((A[3]^B[3])&amp;(B[3]^F[3]));
+            //  {Cout, F} = B + (~A) + Cin;
+            //Ovr = (A[3] &amp; ~B[3] &amp; ~F[3]) | (~A[3] &amp; B[3] &amp; F[3]);
+        end
+        3: begin
+            {Cout, F} = A + B + Cin;
+            //OVR = (A[3] &amp; B[3] &amp; ~F[3]) | (~A[3] &amp; ~B[3] &amp; F[3]);
+            Ovr = (!(A[3]^B[3]))&amp;(B[3]^F[3]);
+        end
+        4: begin
+            F = A ^ B;
+            Ovr = (F == 4&apos;b1111) ? Cin : 1&apos;b0;
+            Cout = Ovr;
+        end
+        5: begin
+            F = A | B;
+            Ovr = (F == 4&apos;b1111) ? Cin : 1&apos;b0;
+            Cout = Ovr;
+        end
+        6: begin
+            F = A &amp; B;
+            Ovr = (F == 4&apos;b1111) ? Cin : 1&apos;b0;
+            Cout =  Ovr;
+        end
+        7: begin
+            F = 4&apos;b1111;
+            Ovr = Cin;
+            Cout = Ovr;
+        end
+    endcase
+
+endmodule</string>
+        </entry>
+        <entry>
+          <string>externalOutputs</string>
+          <string>Cout,Ovr,F:4</string>
+        </entry>
+      </elementAttributes>
+      <pos x="3360" y="620"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Out</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>Result</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>17</int>
+        </entry>
+        <entry>
+          <string>intFormat</string>
+          <intFormat>dec</intFormat>
+        </entry>
+      </elementAttributes>
+      <pos x="3860" y="340"/>
+    </visualElement>
+    <visualElement>
+      <elementName>LED</elementName>
+      <elementAttributes/>
+      <pos x="3600" y="100"/>
+    </visualElement>
+    <visualElement>
+      <elementName>LED</elementName>
+      <elementAttributes/>
+      <pos x="3600" y="280"/>
+    </visualElement>
+    <visualElement>
+      <elementName>LED</elementName>
+      <elementAttributes/>
+      <pos x="3600" y="460"/>
+    </visualElement>
+    <visualElement>
+      <elementName>LED</elementName>
+      <elementAttributes/>
+      <pos x="3580" y="640"/>
+    </visualElement>
+  </visualElements>
+  <wires>
+    <wire>
+      <p1 x="3340" y="320"/>
+      <p2 x="3360" y="320"/>
+    </wire>
+    <wire>
+      <p1 x="3120" y="640"/>
+      <p2 x="3360" y="640"/>
+    </wire>
+    <wire>
+      <p1 x="3560" y="640"/>
+      <p2 x="3580" y="640"/>
+    </wire>
+    <wire>
+      <p1 x="3240" y="260"/>
+      <p2 x="3360" y="260"/>
+    </wire>
+    <wire>
+      <p1 x="3560" y="260"/>
+      <p2 x="3580" y="260"/>
+    </wire>
+    <wire>
+      <p1 x="3040" y="200"/>
+      <p2 x="3160" y="200"/>
+    </wire>
+    <wire>
+      <p1 x="3340" y="200"/>
+      <p2 x="3580" y="200"/>
+    </wire>
+    <wire>
+      <p1 x="3040" y="140"/>
+      <p2 x="3200" y="140"/>
+    </wire>
+    <wire>
+      <p1 x="3340" y="140"/>
+      <p2 x="3360" y="140"/>
+    </wire>
+    <wire>
+      <p1 x="3140" y="460"/>
+      <p2 x="3360" y="460"/>
+    </wire>
+    <wire>
+      <p1 x="3560" y="460"/>
+      <p2 x="3600" y="460"/>
+    </wire>
+    <wire>
+      <p1 x="2960" y="80"/>
+      <p2 x="3020" y="80"/>
+    </wire>
+    <wire>
+      <p1 x="3040" y="80"/>
+      <p2 x="3360" y="80"/>
+    </wire>
+    <wire>
+      <p1 x="3560" y="80"/>
+      <p2 x="3580" y="80"/>
+    </wire>
+    <wire>
+      <p1 x="3720" y="400"/>
+      <p2 x="3780" y="400"/>
+    </wire>
+    <wire>
+      <p1 x="2960" y="20"/>
+      <p2 x="3320" y="20"/>
+    </wire>
+    <wire>
+      <p1 x="3720" y="340"/>
+      <p2 x="3780" y="340"/>
+    </wire>
+    <wire>
+      <p1 x="3800" y="340"/>
+      <p2 x="3860" y="340"/>
+    </wire>
+    <wire>
+      <p1 x="3320" y="660"/>
+      <p2 x="3360" y="660"/>
+    </wire>
+    <wire>
+      <p1 x="3560" y="660"/>
+      <p2 x="3720" y="660"/>
+    </wire>
+    <wire>
+      <p1 x="3160" y="280"/>
+      <p2 x="3360" y="280"/>
+    </wire>
+    <wire>
+      <p1 x="3560" y="280"/>
+      <p2 x="3600" y="280"/>
+    </wire>
+    <wire>
+      <p1 x="3040" y="220"/>
+      <p2 x="3140" y="220"/>
+    </wire>
+    <wire>
+      <p1 x="3320" y="480"/>
+      <p2 x="3360" y="480"/>
+    </wire>
+    <wire>
+      <p1 x="3560" y="480"/>
+      <p2 x="3700" y="480"/>
+    </wire>
+    <wire>
+      <p1 x="3260" y="100"/>
+      <p2 x="3360" y="100"/>
+    </wire>
+    <wire>
+      <p1 x="3040" y="100"/>
+      <p2 x="3240" y="100"/>
+    </wire>
+    <wire>
+      <p1 x="3560" y="100"/>
+      <p2 x="3600" y="100"/>
+    </wire>
+    <wire>
+      <p1 x="3740" y="420"/>
+      <p2 x="3780" y="420"/>
+    </wire>
+    <wire>
+      <p1 x="2960" y="-40"/>
+      <p2 x="3340" y="-40"/>
+    </wire>
+    <wire>
+      <p1 x="3700" y="360"/>
+      <p2 x="3780" y="360"/>
+    </wire>
+    <wire>
+      <p1 x="3340" y="680"/>
+      <p2 x="3360" y="680"/>
+    </wire>
+    <wire>
+      <p1 x="3320" y="300"/>
+      <p2 x="3360" y="300"/>
+    </wire>
+    <wire>
+      <p1 x="3560" y="300"/>
+      <p2 x="3700" y="300"/>
+    </wire>
+    <wire>
+      <p1 x="3200" y="620"/>
+      <p2 x="3360" y="620"/>
+    </wire>
+    <wire>
+      <p1 x="3560" y="620"/>
+      <p2 x="3740" y="620"/>
+    </wire>
+    <wire>
+      <p1 x="3340" y="560"/>
+      <p2 x="3580" y="560"/>
+    </wire>
+    <wire>
+      <p1 x="3040" y="240"/>
+      <p2 x="3120" y="240"/>
+    </wire>
+    <wire>
+      <p1 x="3040" y="180"/>
+      <p2 x="3260" y="180"/>
+    </wire>
+    <wire>
+      <p1 x="2960" y="180"/>
+      <p2 x="3020" y="180"/>
+    </wire>
+    <wire>
+      <p1 x="3340" y="500"/>
+      <p2 x="3360" y="500"/>
+    </wire>
+    <wire>
+      <p1 x="3320" y="120"/>
+      <p2 x="3360" y="120"/>
+    </wire>
+    <wire>
+      <p1 x="3040" y="120"/>
+      <p2 x="3220" y="120"/>
+    </wire>
+    <wire>
+      <p1 x="3560" y="120"/>
+      <p2 x="3720" y="120"/>
+    </wire>
+    <wire>
+      <p1 x="3220" y="440"/>
+      <p2 x="3360" y="440"/>
+    </wire>
+    <wire>
+      <p1 x="3560" y="440"/>
+      <p2 x="3580" y="440"/>
+    </wire>
+    <wire>
+      <p1 x="3340" y="380"/>
+      <p2 x="3580" y="380"/>
+    </wire>
+    <wire>
+      <p1 x="3700" y="380"/>
+      <p2 x="3780" y="380"/>
+    </wire>
+    <wire>
+      <p1 x="3200" y="140"/>
+      <p2 x="3200" y="620"/>
+    </wire>
+    <wire>
+      <p1 x="3140" y="220"/>
+      <p2 x="3140" y="460"/>
+    </wire>
+    <wire>
+      <p1 x="3240" y="100"/>
+      <p2 x="3240" y="260"/>
+    </wire>
+    <wire>
+      <p1 x="3720" y="120"/>
+      <p2 x="3720" y="340"/>
+    </wire>
+    <wire>
+      <p1 x="3720" y="400"/>
+      <p2 x="3720" y="660"/>
+    </wire>
+    <wire>
+      <p1 x="3340" y="560"/>
+      <p2 x="3340" y="680"/>
+    </wire>
+    <wire>
+      <p1 x="3340" y="380"/>
+      <p2 x="3340" y="500"/>
+    </wire>
+    <wire>
+      <p1 x="3340" y="200"/>
+      <p2 x="3340" y="320"/>
+    </wire>
+    <wire>
+      <p1 x="3340" y="-40"/>
+      <p2 x="3340" y="140"/>
+    </wire>
+    <wire>
+      <p1 x="3120" y="240"/>
+      <p2 x="3120" y="640"/>
+    </wire>
+    <wire>
+      <p1 x="3220" y="120"/>
+      <p2 x="3220" y="440"/>
+    </wire>
+    <wire>
+      <p1 x="3700" y="300"/>
+      <p2 x="3700" y="360"/>
+    </wire>
+    <wire>
+      <p1 x="3700" y="380"/>
+      <p2 x="3700" y="480"/>
+    </wire>
+    <wire>
+      <p1 x="3160" y="200"/>
+      <p2 x="3160" y="280"/>
+    </wire>
+    <wire>
+      <p1 x="3320" y="20"/>
+      <p2 x="3320" y="120"/>
+    </wire>
+    <wire>
+      <p1 x="3320" y="120"/>
+      <p2 x="3320" y="300"/>
+    </wire>
+    <wire>
+      <p1 x="3320" y="300"/>
+      <p2 x="3320" y="480"/>
+    </wire>
+    <wire>
+      <p1 x="3320" y="480"/>
+      <p2 x="3320" y="660"/>
+    </wire>
+    <wire>
+      <p1 x="3260" y="100"/>
+      <p2 x="3260" y="180"/>
+    </wire>
+    <wire>
+      <p1 x="3740" y="420"/>
+      <p2 x="3740" y="620"/>
+    </wire>
+    <wire>
+      <p1 x="3580" y="80"/>
+      <p2 x="3580" y="200"/>
+    </wire>
+    <wire>
+      <p1 x="3580" y="260"/>
+      <p2 x="3580" y="380"/>
+    </wire>
+    <wire>
+      <p1 x="3580" y="440"/>
+      <p2 x="3580" y="560"/>
+    </wire>
+  </wires>
+  <measurementOrdering/>
+</circuit>
