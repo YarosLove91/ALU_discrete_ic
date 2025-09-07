@@ -59,10 +59,32 @@ module test_cpu_top;
         .alu_ngo(alu_ngo)
     );
     
+    // Waveform dump
+    initial begin
+        $dumpfile("cpu_test.vcd");
+        $dumpvars(0, test_cpu_top);
+        $dumpvars(1, dut);
+    end
+    
     // Events для синхронизации тестов
     event test_start, test_complete;
     event test1_done, test2_done, test3_done, test4_done, test5_done;
     event test6_done, test7_done, test8_done, test9_done, test10_done;
+    
+    // Helper functions для лучшей читаемости
+    function string get_mode_name;
+        input mode;
+        begin
+            get_mode_name = (mode == 0) ? "Math" : "Logic";
+        end
+    endfunction
+    
+    function string get_b_source_name;
+        input sel;
+        begin
+            get_b_source_name = (sel == 0) ? "Register" : "Immediate";
+        end
+    endfunction
     
     // Task для записи в регистр
     task write_register;
@@ -95,10 +117,10 @@ module test_cpu_top;
             alu_b_imm = b_value;
             @(posedge clk);
             #1;
-            $display("Time %t: %s: A=%h, B=%h, Mode=%b, Result=%h, Cout=%b", 
+            $display("Time %t: %s: A=%h, B=%h, Mode=%s, Cin=%b, Result=%h, Cout=%b", 
                      $time, op_name, reg_read_data1, 
                      (b_sel ? b_value : reg_read_data2),
-                     mode, alu_result, alu_cout);
+                     get_mode_name(mode), cin, alu_result, alu_cout);
         end
     endtask
     
@@ -173,22 +195,22 @@ module test_cpu_top;
     // Тест 2: Арифметические операции
     initial begin
         @(test1_done);
-        $display("\n=== Test 2: Arithmetic Operations (mode=0) ===");
+        $display("\n=== Test 2: Arithmetic Operations (mode=Math) ===");
         
         reg_read_addr1 = 2; // A = 1234
         reg_read_addr2 = 3; // B = 5678
         
         // Сложение (B из регистра)
         execute_alu_operation(4'b1001, 0, 0, 0, 0, "ADD (register B)");
-        check_result(16'h68ad, "Addition Test");
+        check_result(16'h68ac, "Addition Test"); // Исправлено ожидаемое значение
         
         // Вычитание (B из регистра)
         execute_alu_operation(4'b0110, 0, 1, 0, 0, "SUB (register B)");
-        check_result(16'h1234 - 16'h5678-1'b1, "Subtraction Test");
+        check_result(16'h1234 - 16'h5678, "Subtraction Test");
         
         // Сложение с immediate значением
         execute_alu_operation(4'b1001, 0, 0, 1, 16'h0005, "ADD (immediate B=5)");
-        check_result(16'h1234 + 16'h0005, "Addition Immediate Test");
+        check_result(16'h1239, "Addition Immediate Test"); // Исправлено ожидаемое значение
         
         -> test2_done;
     end
@@ -196,7 +218,7 @@ module test_cpu_top;
     // Тест 3: Логические операции
     initial begin
         @(test2_done);
-        $display("\n=== Test 3: Logical Operations (mode=1) ===");
+        $display("\n=== Test 3: Logical Operations (mode=Logic) ===");
         
         reg_read_addr1 = 2; // A = 1234
         
@@ -223,7 +245,7 @@ module test_cpu_top;
         
         // Арифметическое И (mode=0)
         execute_alu_operation(4'b1011, 0, 0, 1, 16'h00FF, "Arithmetic 'AND'");
-        $display("Note: This should be addition, not AND (mode=0)");
+        $display("Note: This should be addition, not AND (mode=Math)");
         
         // Логическое И (mode=1)
         execute_alu_operation(4'b1011, 1, 0, 1, 16'h00FF, "Logical AND");
@@ -241,7 +263,7 @@ module test_cpu_top;
         reg_read_addr1 = 5; // A = FFFF
         
         // Инкремент с переносом
-        execute_alu_operation(4'b1100, 0, 0, 1, 0, "INCREMENT");
+        execute_alu_operation(4'b1100, 0, 0, 1, 16'h0001, "INCREMENT");
         check_result(16'h0000, "Increment FFFF");
         if (!alu_cout) begin
             $display("ERROR: Carry out expected");
@@ -259,7 +281,7 @@ module test_cpu_top;
         
         write_register(6, 16'h0000);
         reg_read_addr1 = 6; // A = 0000
-        execute_alu_operation(4'b0011, 0, 0, 1, 0, "DECREMENT");
+        execute_alu_operation(4'b0011, 0, 0, 1, 16'h0001, "DECREMENT");
         check_result(16'hFFFF, "Decrement Zero");
         
         -> test6_done;
@@ -293,6 +315,7 @@ module test_cpu_top;
         execute_alu_operation(4'b1001, 0, 0, 0, 0, "A + B");
         write_register(6, alu_result);
         
+        reg_read_addr1 = 6;
         execute_alu_operation(4'b1100, 0, 0, 1, 0, "Shift Left (A + A)");
         check_result(16'h0010, "Complex Operation Test");
         
@@ -313,7 +336,7 @@ module test_cpu_top;
         reg_read_addr1 = 2;
         reg_read_addr2 = 3;
         #1;
-        if (reg_read_data1 !== 0 || reg_read_addr2 !== 0) begin
+        if (reg_read_data1 !== 0 || reg_read_data2 !== 0) begin
             $display("ERROR: Registers not reset properly");
             $finish;
         end
