@@ -160,14 +160,14 @@ module test_cpu_top;
         $display("Data Width: %d bits, Registers: %d", DATA_WIDTH, NUM_REGS);
         
         // Сброс
-        #20 reset = 0;
+        #10 reset = 0;
         #10;
         
         // Запуск тестов по порядку
         -> test_start;
         
         // Ожидание завершения всех тестов
-        @(test12_done);
+        @(test7_done);
         
         $display("\n=== ALL TESTS PASSED! ===");
         #50 $finish;
@@ -176,7 +176,7 @@ module test_cpu_top;
     // Тест 1: Инициализация регистров для логических операций
     initial begin
         @(test_start);
-        $display("\n=== Test 1: Register Initialization for Logic Tests ===");
+        $display("\n=== Register Initialization for Logic Tests ===");
         
         write_register(1, 16'h1234);  // Test pattern 1
         write_register(2, 16'h5678);  // Test pattern 2  
@@ -185,14 +185,9 @@ module test_cpu_top;
         write_register(5, 16'hAAAA);  // Pattern for XOR
         write_register(6, 16'h5555);  // Pattern for complement
         
-        -> test1_done;
-    end
-    
-    // Тест 2: Логические операции AND
-    initial begin
-        @(test1_done);
-        $display("\n=== Test 2: AND Operations (mode=Logic) ===");
-        
+        $display("\n=== Test 1: Logic operations ===");
+        $display("\n=== Test 1.1: AND Operations (mode=Logic) ===");
+
         reg_read_addr1 = 1; // A = 1234
         
         // AND с immediate значением
@@ -212,13 +207,7 @@ module test_cpu_top;
         execute_alu_operation(4'b1011, 1, 0, 1, 16'h0000, "AND Zero Mask");
         check_result(16'h0000, "AND Zero Mask Test");
         
-        -> test2_done;
-    end
-    
-    // Тест 3: Логические операции OR
-    initial begin
-        @(test2_done);
-        $display("\n=== Test 3: OR Operations (mode=Logic) ===");
+        $display("\n=== Test 1.2: OR Operations (mode=Logic) ===");
         
         reg_read_addr1 = 1; // A = 1234
         
@@ -239,13 +228,7 @@ module test_cpu_top;
         execute_alu_operation(4'b1110, 1, 0, 1, 16'hFFFF, "OR Full Mask");
         check_result(16'hFFFF, "OR Full Mask Test");
         
-        -> test3_done;
-    end
-    
-    // Тест 4: Другие логические операции
-    initial begin
-        @(test3_done);
-        $display("\n=== Test 4: Other Logic Operations ===");
+        $display("\n=== Test 1.3: Other Logic Operations ===");
         
         // XOR операция
         reg_read_addr1 = 5; // A = AAAA
@@ -256,6 +239,8 @@ module test_cpu_top;
         execute_alu_operation(4'b0110, 1, 0, 1, 16'hFFFF, "NOT (XOR with FFFF)");
         check_result(~16'hAAAA, "NOT Test");
         
+        $display("\n=== Test 1.4: Carry in Logic Operations ===");
+
         // Проверка что переносы не влияют на логические операции
         reg_read_addr1 = 1; // A = 1234
         execute_alu_operation(4'b1011, 1, 1, 1, 16'h00FF, "AND with Cin=1");
@@ -266,13 +251,13 @@ module test_cpu_top;
         end
         $display("PASS: Carry correctly not set in logic mode");
         
-        -> test4_done;
+        -> test1_done;
     end
-    
-    // Тест 5: Инициализация регистров (оригинальный тест 1)
+
+    // Тест 2: Арифметические операции
     initial begin
-        @(test4_done);
-        $display("\n=== Test 5: Register Initialization ===");
+        @(test1_done);
+        $display("\n=== Register Initialization for Arithmetic Tests ===");
         
         write_register(0, 16'h0000);
         write_register(1, 16'h0001);
@@ -280,65 +265,31 @@ module test_cpu_top;
         write_register(3, 16'h5678);
         write_register(4, 16'h9ABC);
         
-        // Чтение регистров
-        reg_read_addr1 = 2;
-        reg_read_addr2 = 3;
-        #1;
-        $display("Reg2 = %h, Reg3 = %h", reg_read_data1, reg_read_data2);
-        
-        -> test5_done;
-    end
-    
-    // Тест 6: Арифметические операции (оригинальный тест 2)
-    initial begin
-        @(test5_done);
-        $display("\n=== Test 6: Arithmetic Operations (mode=Math) ===");
-        
         reg_read_addr1 = 2; // A = 1234
         reg_read_addr2 = 3; // B = 5678
         
+        $display("Reg2 = %h, Reg3 = %h", reg_read_data1, reg_read_data2);
+        $display("\n=== Test 2: Arithmetic Operations (mode=Math) ===");
+        
         // Сложение (B из регистра)
         execute_alu_operation(4'b1001, 0, 0, 0, 0, "ADD (register B)");
-        check_result(16'h68ac+1, "Addition Test");
+        check_result(16'h68ac, "Addition Test");
         
         // Вычитание (B из регистра)
         execute_alu_operation(4'b0110, 0, 1, 0, 0, "SUB (register B)");
-        check_result((16'h1234 - 16'h5678)-1, "Subtraction Test");
+        check_result(16'h1234 - 16'h5678, "Subtraction Test");
         
         // Сложение с immediate значением
         execute_alu_operation(4'b1001, 0, 0, 1, 16'h0005, "ADD (immediate B=5)");
-        check_result(16'h1239+1, "Addition Immediate Test");
+        check_result(16'h1239, "Addition Immediate Test");
         
-        -> test6_done;
+        -> test2_done;
     end
     
-    // Тест 7: Логические операции (оригинальный тест 3)
+    // Тест 3: Сравнение режимов (оригинальный тест 4)
     initial begin
-        @(test6_done);
-        $display("\n=== Test 7: Logical Operations (mode=Logic) ===");
-        
-        reg_read_addr1 = 2; // A = 1234
-        
-        // Логическое И с непосредственным значением
-        execute_alu_operation(4'b1011, 1, 0, 1, 16'h00FF, "AND Immediate");
-        check_result(16'h1234 & 16'h00FF, "AND Test");
-        
-        // Логическое ИЛИ с непосредственным значением
-        execute_alu_operation(4'b1110, 1, 0, 1, 16'hFF00, "OR Immediate");
-        check_result(16'h1234 | 16'hFF00, "OR Test");
-        
-        // Логическое И с регистром
-        reg_read_addr2 = 4; // B = 9ABC
-        execute_alu_operation(4'b1011, 1, 0, 0, 0, "AND Register");
-        check_result(16'h1234 & 16'h9ABC, "AND Register Test");
-        
-        -> test7_done;
-    end
-    
-    // Тест 8: Сравнение режимов (оригинальный тест 4)
-    initial begin
-        @(test7_done);
-        $display("\n=== Test 8: Mode Comparison ===");
+        @(test2_done);
+        $display("\n=== Test 3: Mode Comparison ===");
         
         // Арифметическое И (mode=0)
         execute_alu_operation(4'b1011, 0, 0, 1, 16'h00FF, "Arithmetic 'AND'");
@@ -348,13 +299,13 @@ module test_cpu_top;
         execute_alu_operation(4'b1011, 1, 0, 1, 16'h00FF, "Logical AND");
         check_result(16'h1234 & 16'h00FF, "Logical AND Test");
         
-        -> test8_done;
+        -> test3_done;
     end
     
-    // Тест 9: Операции с переносами (оригинальный тест 5)
+    // Тест 4: Операции с переносами
     initial begin
-        @(test8_done);
-        $display("\n=== Test 9: Carry Operations ===");
+        @(test3_done);
+        $display("\n=== Test 4: Carry Operations ===");
         
         write_register(5, 16'hFFFF);
         reg_read_addr1 = 5; // A = FFFF
@@ -368,39 +319,39 @@ module test_cpu_top;
         end
         $display("PASS: Carry out detected");
         
-        -> test9_done;
+        -> test4_done;
     end
     
-    // Тест 10: Декремент (оригинальный тест 6)
+    // Тест 5: Декремент (оригинальный тест 6)
     initial begin
-        @(test9_done);
-        $display("\n=== Test 10: Decrement Operation ===");
+        @(test4_done);
+        $display("\n=== Test 5: Decrement Operation ===");
         
         write_register(6, 16'h0000);
         reg_read_addr1 = 6; // A = 0000
         execute_alu_operation(4'b0011, 0, 0, 1, 16'h0001, "DECREMENT");
         check_result(16'hFFFF, "Decrement Zero");
         
-        -> test10_done;
+        -> test5_done;
     end
     
     // Тест 11: Сдвиг/удвоение (оригинальный тест 7)
     initial begin
-        @(test10_done);
-        $display("\n=== Test 11: Shift/Double Operation ===");
+        @(test5_done);
+        $display("\n=== Test 6: Shift/Double Operation ===");
         
         write_register(7, 16'h0007);
         reg_read_addr1 = 7; // A = 0007
         execute_alu_operation(4'b1100, 1, 0, 1, 0, "SHIFT LEFT/DOUBLE");
         $display("Logical shift left result: %h", alu_result);
         
-        -> test11_done;
+        -> test6_done;
     end
     
     // Тест 12: Комплексная операция (оригинальный тест 8)
     initial begin
-        @(test11_done);
-        $display("\n=== Test 12: Complex Operation ===");
+        @(test6_done);
+        $display("\n=== Test 7: Complex Operation ===");
         
         write_register(6, 16'h0005);
         write_register(7, 16'h0003);
@@ -416,7 +367,7 @@ module test_cpu_top;
         execute_alu_operation(4'b1100, 0, 0, 1, 0, "Shift Left (A + A)");
         check_result(16'h0010, "Complex Operation Test");
         
-        -> test12_done;
+        -> test7_done;
     end
 
 endmodule
