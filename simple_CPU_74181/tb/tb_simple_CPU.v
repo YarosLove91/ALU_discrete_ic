@@ -82,12 +82,6 @@ module test_cpu_top;
         end
     endfunction
     
-    function string get_b_source_name;
-        input sel;
-        begin
-            get_b_source_name = (sel == 0) ? "Register" : "Immediate";
-        end
-    endfunction
     
     // Task для записи в регистр
     task write_register;
@@ -108,25 +102,52 @@ module test_cpu_top;
     task execute_alu_operation;
         input [3:0] operation;
         input mode;
-        input cin;
-        input b_sel;
+        input carry_in;  // 0=без переноса, 1=с переносом
+        input b_sel;     // 0=Register, 1=Immediate
         input [DATA_WIDTH-1:0] b_value;
         input string op_name;
         begin
             alu_comm = operation;
             alu_mode = mode;
-            alu_cin = cin;
+            alu_cin = carry_in;
             b_source_sel = b_sel;
             alu_b_imm = b_value;
             @(posedge clk);
             #1;
-            $display("Time %t: %s: A=%h, B=%h, Mode=%s, Cin=%b, Result=%h, Cout=%b", 
-                     $time, op_name, reg_read_data1, 
-                     (b_sel ? b_value : reg_read_data2),
-                     get_mode_name(mode), cin, alu_result, alu_cout);
+            $display("Time %t: %s: A=%h, B=%h, Mode=%s, B_Src=%s, Carry=%s, Result=%h, Cout=%b", 
+                    $time, op_name, reg_read_data1, 
+                    (b_sel ? b_value : reg_read_data2),
+                    get_mode_name(mode),
+                    get_b_source_name(b_sel),
+                    get_carry_name(carry_in),
+                    alu_result, alu_cout);
         end
     endtask
     
+    // Helper function для имени переноса
+    function string get_carry_name;
+        input carry;
+        begin
+            if (carry == CARRY_IN_DISABLED) begin
+                get_carry_name = "Disabled";
+            end else begin
+                get_carry_name = "Enabled";
+            end
+        end
+    endfunction
+
+    // Helper function для имени источника B
+    function string get_b_source_name;
+        input b_sel;
+        begin
+            if (b_sel == B_SOURCE_REGISTER) begin
+                get_b_source_name = "Register";
+            end else begin
+                get_b_source_name = "Immediate";
+            end
+        end
+    endfunction
+
     // Task для проверки результата
     task check_result;
         input [DATA_WIDTH-1:0] expected;
@@ -180,6 +201,7 @@ module test_cpu_top;
         @(test_start);
         $display("\n=== Register Initialization for Logic Tests ===");
         
+        write_register(REG_R0, TEST_ZERO);   // Test ZERO`s pattern
         write_register(REG_R1, TEST_VAL_1);  // Test pattern 1
         write_register(REG_R2, TEST_VAL_2);  // Test pattern 2  
         write_register(REG_R3, TEST_MASK_LOW_ONES);  // Mask for AND
@@ -193,20 +215,41 @@ module test_cpu_top;
         reg_read_addr1 = REG_R1; // A = 1234
         
         // AND с immediate значением
-        execute_alu_operation(4'b1011, 1, 0, 1, TEST_MASK_LOW_ONES, "AND Immediate 00FF");
-        check_result(16'h1234 & 16'h00FF, "AND Immediate Test");
+        execute_alu_operation(  4'b1011, 
+                                ALU_MODE_LOGIC, 
+                                CARRY_IN_ENABLED, 
+                                B_SOURCE_IMMEDIATE, 
+                                TEST_MASK_LOW_ONES,
+                                "AND Immediate");
+        check_result(TEST_VAL_1 & TEST_MASK_LOW_ONES, "AND Immediate Test");
         
         // AND с регистром
-        reg_read_addr2 = 3; // B = 00FF
-        execute_alu_operation(4'b1011, 1, 0, 0, 0, "AND Register");
+        reg_read_addr2 = REG_R3; // B = 00FF
+        execute_alu_operation(  4'b1011, 
+                                ALU_MODE_LOGIC, 
+                                CARRY_IN_DISABLED, 
+                                B_SOURCE_REGISTER, 
+                                INDIFFERENT_VAL, 
+                                "AND Register");
         check_result(16'h1234 & 16'h00FF, "AND Register Test");
         
         // AND с полной маской
-        execute_alu_operation(4'b1011, 1, 0, 1, TEST_ONES, "AND Full Mask");
+        execute_alu_operation(  4'b1011, 
+                                ALU_MODE_LOGIC, 
+                                CARRY_IN_ENABLED, 
+                                B_SOURCE_IMMEDIATE, 
+                                TEST_ONES, 
+                                "AND Full Mask");
         check_result(16'h1234, "AND Full Mask Test");
         
+        reg_read_addr1 = REG_R0; // A = 1234
         // AND с нулевой маской
-        execute_alu_operation(4'b1011, 1, 0, 1, TEST_ZERO, "AND Zero Mask");
+        execute_alu_operation(  4'b1011, 
+                                ALU_MODE_LOGIC, 
+                                CARRY_IN_DISABLED, 
+                                B_SOURCE_REGISTER, 
+                                INDIFFERENT_VAL, 
+                                "AND Zero Mask");
         check_result(16'h0000, "AND Zero Mask Test");
         
         $display("\n=== Test 1.2: OR Operations (mode=Logic) ===");
@@ -214,39 +257,75 @@ module test_cpu_top;
         reg_read_addr1 = REG_R1; // A = 1234
         
         // OR с immediate значением
-        execute_alu_operation(4'b1110, 1, 0, 1, TEST_MASK_HIGH_ONES, "OR Immediate FF00");
+        execute_alu_operation(  4'b1110, 
+                                ALU_MODE_LOGIC, 
+                                CARRY_IN_DISABLED, 
+                                B_SOURCE_IMMEDIATE, 
+                                TEST_MASK_HIGH_ONES, 
+                                "OR Immediate FF00");
         check_result(16'h1234 | 16'hFF00, "OR Immediate Test");
         
         // OR с регистром
         reg_read_addr2 = REG_R4; // B = FF00
-        execute_alu_operation(4'b1110, 1, 0, 0, 0, "OR Register");
+        execute_alu_operation(  4'b1110, 
+                                ALU_MODE_LOGIC, 
+                                CARRY_IN_ENABLED, 
+                                B_SOURCE_REGISTER, 
+                                INDIFFERENT_VAL, 
+                                "OR Register");
         check_result(16'h1234 | 16'hFF00, "OR Register Test");
         
         // OR с нулевой маской
-        execute_alu_operation(4'b1110, 1, 0, 1, TEST_ZERO, "OR Zero Mask");
+        execute_alu_operation(  4'b1110, 
+                                ALU_MODE_LOGIC, 
+                                CARRY_IN_ENABLED, 
+                                B_SOURCE_IMMEDIATE, 
+                                TEST_ZERO, 
+                                "OR Zero Mask");
         check_result(16'h1234, "OR Zero Mask Test");
         
         // OR с полной маской
-        execute_alu_operation(4'b1110, 1, 0, 1, TEST_ONES, "OR Full Mask");
+        execute_alu_operation(  4'b1110, 
+                                ALU_MODE_LOGIC, 
+                                CARRY_IN_ENABLED, 
+                                B_SOURCE_IMMEDIATE, 
+                                TEST_ONES, 
+                                "OR Full Mask");
         check_result(16'hFFFF, "OR Full Mask Test");
         
         $display("\n=== Test 1.3: Other Logic Operations ===");
         
         // XOR операция
         reg_read_addr1 = REG_R5; // A = AAAA
-        execute_alu_operation(4'b0110, 1, 0, 1, 16'h5555, "XOR with 5555");
+        execute_alu_operation(  4'b0110, 
+                                ALU_MODE_LOGIC, 
+                                CARRY_IN_ENABLED, 
+                                B_SOURCE_IMMEDIATE, 
+                                TEST_MASK_ONES_ODDS, 
+                                "XOR with 5555");
         check_result(16'hAAAA ^ 16'h5555, "XOR Test");
         
         // NOT операция (XOR с FFFF)
-        execute_alu_operation(4'b0110, 1, 0, 1, TEST_ONES, "NOT (XOR with FFFF)");
+        execute_alu_operation(  4'b0110, 
+                                ALU_MODE_LOGIC, 
+                                CARRY_IN_ENABLED, 
+                                B_SOURCE_IMMEDIATE, 
+                                TEST_ONES, 
+                                "NOT (XOR with FFFF)");
         check_result(~16'hAAAA, "NOT Test");
         
         $display("\n=== Test 1.4: Carry in Logic Operations ===");
 
         // Проверка что переносы не влияют на логические операции
         reg_read_addr1 = REG_R1; // A = 1234
-        execute_alu_operation(4'b1011, 1, 1, 1, TEST_MASK_LOW_ONES, "AND with Cin=1");
+        execute_alu_operation(  4'b1011, 
+                                ALU_MODE_LOGIC, 
+                                CARRY_IN_DISABLED, 
+                                B_SOURCE_IMMEDIATE, 
+                                TEST_MASK_LOW_ONES, 
+                                "AND with Cin=1");
         check_result(16'h1234 & 16'h00FF, "AND with Carry Test");
+
         if (alu_cout !== 1'b0) begin
             $display("ERROR: Carry should not be set in logic mode");
             $finish;
@@ -262,7 +341,7 @@ module test_cpu_top;
         $display("\n=== Register Initialization for Arithmetic Tests ===");
         
         write_register(REG_R0, TEST_ZERO);
-        write_register(REG_R1, 16'h0001);
+        write_register(REG_R1, TEST_ONE_VAL);
         write_register(REG_R2, TEST_VAL_1);
         write_register(REG_R3, TEST_VAL_2);
         write_register(REG_R4, 16'h9ABC);
@@ -274,10 +353,21 @@ module test_cpu_top;
         $display("\n=== Test 2: Arithmetic Operations (mode=Math) ===");
         
         // Сложение
-        execute_alu_operation(4'b1001, 0, 1, 0, 0, "ADD without carry"); // Cin=1 -> без переноса
+        execute_alu_operation(  4'b1001, 
+                                ALU_MODE_ARITHMETIC, 
+                                CARRY_IN_DISABLED, 
+                                B_SOURCE_REGISTER, 
+                                INDIFFERENT_VAL, 
+                                "ADD without carry"); // Cin=1 -> без переноса
         check_result(16'h68ac, "Addition without carry");
         
-        execute_alu_operation(4'b1001, 0, 0, 0, 0, "ADD with carry"); // Cin=0 -> с переносом
+        execute_alu_operation(  4'b1001, 
+                                ALU_MODE_ARITHMETIC, 
+                                CARRY_IN_ENABLED, 
+                                B_SOURCE_REGISTER, 
+                                INDIFFERENT_VAL, 
+                                "ADD with carry"); // Cin=0 -> с переносом
+        
         check_result(16'h68ad, "Addition with carry");
         
         // Проверим другие простые сложения
@@ -285,27 +375,55 @@ module test_cpu_top;
         reg_read_addr1 = REG_R7; // A = 0001
         reg_read_addr2 = REG_R7; // B = 0001
         
-        execute_alu_operation(4'b1001, 0, 1, 0, 0, "1 + 1 without carry");
+        execute_alu_operation(  4'b1001, 
+                                ALU_MODE_ARITHMETIC, 
+                                CARRY_IN_DISABLED, 
+                                B_SOURCE_REGISTER,
+                                INDIFFERENT_VAL, 
+                                "1 + 1 without carry");
         check_result(16'h0002, "1 + 1 without carry");
         
-        execute_alu_operation(4'b1001, 0, 0, 0, 0, "1 + 1 with carry");
+        execute_alu_operation(  4'b1001, 
+                                ALU_MODE_ARITHMETIC, 
+                                CARRY_IN_ENABLED, 
+                                B_SOURCE_REGISTER, 
+                                INDIFFERENT_VAL, 
+                                "1 + 1 with carry");
         check_result(16'h0003, "1 + 1 with carry");
         
         // Вычитание - С заемом (borrow) - нужен перенос!
         reg_read_addr1 = REG_R2; // A = 1234
         reg_read_addr2 = REG_R3; // B = 5678
-        execute_alu_operation(4'b0110, 0, 0, 0, 0, "SUB with borrow"); // Cin=0 -> с переносом
+        execute_alu_operation(  4'b0110, 
+                                ALU_MODE_ARITHMETIC, 
+                                CARRY_IN_ENABLED,
+                                B_SOURCE_REGISTER, 
+                                INDIFFERENT_VAL, 
+                                "SUB with borrow"); // Cin=0 -> с переносом
         check_result(16'h1234 - 16'h5678, "Subtraction Test");
 
-        execute_alu_operation(4'b0110, 0, 1, 0, 0, "SUB without borrow"); // Cin=1 -> без переноса
+        execute_alu_operation(  4'b0110, 
+                                ALU_MODE_ARITHMETIC, 
+                                CARRY_IN_DISABLED, 
+                                B_SOURCE_REGISTER, 
+                                INDIFFERENT_VAL, 
+                                "SUB without borrow"); // Cin=1 -> без переноса
         check_result((16'h1234 - 16'h5678)-1, "Subtraction Test");
 
         // Сложение с immediate значением - без переноса
-        execute_alu_operation(4'b1001, 0, 1, 1, 16'h0005, "ADD immediate without carry");
+        execute_alu_operation(  4'b1001, 
+                                ALU_MODE_ARITHMETIC, 
+                                CARRY_IN_DISABLED,
+                                B_SOURCE_IMMEDIATE, 
+                                16'h0005, "ADD immediate without carry");
         check_result(16'h1239, "Addition Immediate Test");
         
         // Сложение с immediate значением - с переносом
-        execute_alu_operation(4'b1001, 0, 0, 1, 16'h0005, "ADD immediate without carry");
+        execute_alu_operation(  4'b1001, 
+                                ALU_MODE_ARITHMETIC, 
+                                CARRY_IN_ENABLED, 
+                                B_SOURCE_IMMEDIATE, 
+                                16'h0005, "ADD immediate without carry");
         check_result(16'h1239+1'b1, "Addition Immediate Test");
 
         -> test2_done;
