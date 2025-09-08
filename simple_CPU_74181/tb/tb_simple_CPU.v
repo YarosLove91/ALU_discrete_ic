@@ -1,3 +1,5 @@
+`include "params.vh"  // Правильный относительный путь
+
 module test_cpu_top;
 
     // Параметры
@@ -102,16 +104,6 @@ module test_cpu_top;
         end
     endtask
     
-    // Helper function для правильного управления переносом
-    function get_human_cin;
-    input desired_carry; // 1 - нужен перенос, 0 - не нужен
-    begin
-        // В положительной логике 74181: 
-        // 0 (L) - с переносом, 1 (H) - без переноса
-        get_human_cin = ~desired_carry;
-    end
-endfunction
-
     // Task для выполнения операции АЛУ
     task execute_alu_operation;
         input [3:0] operation;
@@ -188,20 +180,20 @@ endfunction
         @(test_start);
         $display("\n=== Register Initialization for Logic Tests ===");
         
-        write_register(1, 16'h1234);  // Test pattern 1
-        write_register(2, 16'h5678);  // Test pattern 2  
-        write_register(3, 16'h00FF);  // Mask for AND
-        write_register(4, 16'hFF00);  // Mask for OR
-        write_register(5, 16'hAAAA);  // Pattern for XOR
-        write_register(6, 16'h5555);  // Pattern for complement
+        write_register(REG_R1, TEST_VAL_1);  // Test pattern 1
+        write_register(REG_R2, TEST_VAL_2);  // Test pattern 2  
+        write_register(REG_R3, TEST_MASK_LOW_ONES);  // Mask for AND
+        write_register(REG_R4, TEST_MASK_HIGH_ONES);  // Mask for OR
+        write_register(REG_R5, TEST_MASK_ONES_EVENS);  // Pattern for XOR
+        write_register(REG_R6, TEST_MASK_ONES_ODDS );  // Pattern for complement
         
         $display("\n=== Test 1: Logic operations ===");
         $display("\n=== Test 1.1: AND Operations (mode=Logic) ===");
 
-        reg_read_addr1 = 1; // A = 1234
+        reg_read_addr1 = REG_R1; // A = 1234
         
         // AND с immediate значением
-        execute_alu_operation(4'b1011, 1, 0, 1, 16'h00FF, "AND Immediate 00FF");
+        execute_alu_operation(4'b1011, 1, 0, 1, TEST_MASK_LOW_ONES, "AND Immediate 00FF");
         check_result(16'h1234 & 16'h00FF, "AND Immediate Test");
         
         // AND с регистром
@@ -210,50 +202,50 @@ endfunction
         check_result(16'h1234 & 16'h00FF, "AND Register Test");
         
         // AND с полной маской
-        execute_alu_operation(4'b1011, 1, 0, 1, 16'hFFFF, "AND Full Mask");
+        execute_alu_operation(4'b1011, 1, 0, 1, TEST_ONES, "AND Full Mask");
         check_result(16'h1234, "AND Full Mask Test");
         
         // AND с нулевой маской
-        execute_alu_operation(4'b1011, 1, 0, 1, 16'h0000, "AND Zero Mask");
+        execute_alu_operation(4'b1011, 1, 0, 1, TEST_ZERO, "AND Zero Mask");
         check_result(16'h0000, "AND Zero Mask Test");
         
         $display("\n=== Test 1.2: OR Operations (mode=Logic) ===");
         
-        reg_read_addr1 = 1; // A = 1234
+        reg_read_addr1 = REG_R1; // A = 1234
         
         // OR с immediate значением
-        execute_alu_operation(4'b1110, 1, 0, 1, 16'hFF00, "OR Immediate FF00");
+        execute_alu_operation(4'b1110, 1, 0, 1, TEST_MASK_HIGH_ONES, "OR Immediate FF00");
         check_result(16'h1234 | 16'hFF00, "OR Immediate Test");
         
         // OR с регистром
-        reg_read_addr2 = 4; // B = FF00
+        reg_read_addr2 = REG_R4; // B = FF00
         execute_alu_operation(4'b1110, 1, 0, 0, 0, "OR Register");
         check_result(16'h1234 | 16'hFF00, "OR Register Test");
         
         // OR с нулевой маской
-        execute_alu_operation(4'b1110, 1, 0, 1, 16'h0000, "OR Zero Mask");
+        execute_alu_operation(4'b1110, 1, 0, 1, TEST_ZERO, "OR Zero Mask");
         check_result(16'h1234, "OR Zero Mask Test");
         
         // OR с полной маской
-        execute_alu_operation(4'b1110, 1, 0, 1, 16'hFFFF, "OR Full Mask");
+        execute_alu_operation(4'b1110, 1, 0, 1, TEST_ONES, "OR Full Mask");
         check_result(16'hFFFF, "OR Full Mask Test");
         
         $display("\n=== Test 1.3: Other Logic Operations ===");
         
         // XOR операция
-        reg_read_addr1 = 5; // A = AAAA
+        reg_read_addr1 = REG_R5; // A = AAAA
         execute_alu_operation(4'b0110, 1, 0, 1, 16'h5555, "XOR with 5555");
         check_result(16'hAAAA ^ 16'h5555, "XOR Test");
         
         // NOT операция (XOR с FFFF)
-        execute_alu_operation(4'b0110, 1, 0, 1, 16'hFFFF, "NOT (XOR with FFFF)");
+        execute_alu_operation(4'b0110, 1, 0, 1, TEST_ONES, "NOT (XOR with FFFF)");
         check_result(~16'hAAAA, "NOT Test");
         
         $display("\n=== Test 1.4: Carry in Logic Operations ===");
 
         // Проверка что переносы не влияют на логические операции
-        reg_read_addr1 = 1; // A = 1234
-        execute_alu_operation(4'b1011, 1, 1, 1, 16'h00FF, "AND with Cin=1");
+        reg_read_addr1 = REG_R1; // A = 1234
+        execute_alu_operation(4'b1011, 1, 1, 1, TEST_MASK_LOW_ONES, "AND with Cin=1");
         check_result(16'h1234 & 16'h00FF, "AND with Carry Test");
         if (alu_cout !== 1'b0) begin
             $display("ERROR: Carry should not be set in logic mode");
@@ -269,14 +261,14 @@ endfunction
         @(test1_done);
         $display("\n=== Register Initialization for Arithmetic Tests ===");
         
-        write_register(0, 16'h0000);
-        write_register(1, 16'h0001);
-        write_register(2, 16'h1234);
-        write_register(3, 16'h5678);
-        write_register(4, 16'h9ABC);
+        write_register(REG_R0, TEST_ZERO);
+        write_register(REG_R1, 16'h0001);
+        write_register(REG_R2, TEST_VAL_1);
+        write_register(REG_R3, TEST_VAL_2);
+        write_register(REG_R4, 16'h9ABC);
         
-        reg_read_addr1 = 2; // A = 1234
-        reg_read_addr2 = 3; // B = 5678
+        reg_read_addr1 = REG_R2; // A = 1234
+        reg_read_addr2 = REG_R3; // B = 5678
         
         $display("Reg2 = %h, Reg3 = %h", reg_read_data1, reg_read_data2);
         $display("\n=== Test 2: Arithmetic Operations (mode=Math) ===");
@@ -289,9 +281,9 @@ endfunction
         check_result(16'h68ad, "Addition with carry");
         
         // Проверим другие простые сложения
-        write_register(7, 16'h0001);
-        reg_read_addr1 = 7; // A = 0001
-        reg_read_addr2 = 7; // B = 0001
+        write_register(REG_R7, 16'h0001);
+        reg_read_addr1 = REG_R7; // A = 0001
+        reg_read_addr2 = REG_R7; // B = 0001
         
         execute_alu_operation(4'b1001, 0, 1, 0, 0, "1 + 1 without carry");
         check_result(16'h0002, "1 + 1 without carry");
@@ -300,8 +292,8 @@ endfunction
         check_result(16'h0003, "1 + 1 with carry");
         
         // Вычитание - С заемом (borrow) - нужен перенос!
-        reg_read_addr1 = 2; // A = 1234
-        reg_read_addr2 = 3; // B = 5678
+        reg_read_addr1 = REG_R2; // A = 1234
+        reg_read_addr2 = REG_R3; // B = 5678
         execute_alu_operation(4'b0110, 0, 0, 0, 0, "SUB with borrow"); // Cin=0 -> с переносом
         check_result(16'h1234 - 16'h5678, "Subtraction Test");
 
@@ -324,6 +316,12 @@ endfunction
         @(test2_done);
         $display("\n=== Test 3: Mode Comparison ===");
         
+        write_register(REG_R2, TEST_VAL_1);
+        write_register(REG_R5, TEST_MASK_LOW_ONES);
+
+        reg_read_addr1 = REG_R2; // A = 1234
+        reg_read_addr2 = REG_R5; // B = 00FF
+
         // Арифметическое И (mode=0) с переносом
         execute_alu_operation(4'b1011, 0, 0, 1, 16'h00FF, "Arithmetic 'AB - 1'");
         check_result(16'h1234 & 16'h00FF, "Logical AND Test");
@@ -358,8 +356,8 @@ endfunction
     
         $display("\n=== Test 4: Carry Operations ===");
         
-        write_register(5, 16'hFFFF);
-        reg_read_addr1 = 5; // A = FFFF
+        write_register(REG_R5, TEST_ONES);
+        reg_read_addr1 = REG_R5; // A = FFFF
         
         // Инкремент: FFFF + 1 = 0000 (без дополнительного +1 от Cin)
         execute_alu_operation(4'b1001, 0, 1, 1, 16'h0001, "INCREMENT"); // Cin=1 -> без переноса
