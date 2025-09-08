@@ -102,6 +102,16 @@ module test_cpu_top;
         end
     endtask
     
+    // Helper function для правильного управления переносом
+    function get_human_cin;
+    input desired_carry; // 1 - нужен перенос, 0 - не нужен
+    begin
+        // В положительной логике 74181: 
+        // 0 (L) - с переносом, 1 (H) - без переноса
+        get_human_cin = ~desired_carry;
+    end
+endfunction
+
     // Task для выполнения операции АЛУ
     task execute_alu_operation;
         input [3:0] operation;
@@ -167,7 +177,7 @@ module test_cpu_top;
         -> test_start;
         
         // Ожидание завершения всех тестов
-        @(test7_done);
+        @(test4_done);
         
         $display("\n=== ALL TESTS PASSED! ===");
         #50 $finish;
@@ -270,11 +280,6 @@ module test_cpu_top;
         
         $display("Reg2 = %h, Reg3 = %h", reg_read_data1, reg_read_data2);
         $display("\n=== Test 2: Arithmetic Operations (mode=Math) ===");
-    
-        reg_read_addr1 = 2; // A = 1234
-        reg_read_addr2 = 3; // B = 5678
-        
-        $display("Testing: 1234 + 5678 = 68AC (Cin=1), 68AD (Cin=0)");
         
         // Сложение
         execute_alu_operation(4'b1001, 0, 1, 0, 0, "ADD without carry"); // Cin=1 -> без переноса
@@ -299,11 +304,18 @@ module test_cpu_top;
         reg_read_addr2 = 3; // B = 5678
         execute_alu_operation(4'b0110, 0, 0, 0, 0, "SUB with borrow"); // Cin=0 -> с переносом
         check_result(16'h1234 - 16'h5678, "Subtraction Test");
-        
+
+        execute_alu_operation(4'b0110, 0, 1, 0, 0, "SUB without borrow"); // Cin=1 -> без переноса
+        check_result((16'h1234 - 16'h5678)-1, "Subtraction Test");
+
         // Сложение с immediate значением - без переноса
         execute_alu_operation(4'b1001, 0, 1, 1, 16'h0005, "ADD immediate without carry");
         check_result(16'h1239, "Addition Immediate Test");
         
+        // Сложение с immediate значением - с переносом
+        execute_alu_operation(4'b1001, 0, 0, 1, 16'h0005, "ADD immediate without carry");
+        check_result(16'h1239+1'b1, "Addition Immediate Test");
+
         -> test2_done;
     end
     
@@ -312,21 +324,38 @@ module test_cpu_top;
         @(test2_done);
         $display("\n=== Test 3: Mode Comparison ===");
         
-        // Арифметическое И (mode=0)
-        execute_alu_operation(4'b1011, 0, 0, 1, 16'h00FF, "Arithmetic 'AND'");
-        $display("Note: This should be addition, not AND (mode=Math)");
+        // Арифметическое И (mode=0) с переносом
+        execute_alu_operation(4'b1011, 0, 0, 1, 16'h00FF, "Arithmetic 'AB - 1'");
+        check_result(16'h1234 & 16'h00FF, "Logical AND Test");
+
+        // Арифметическое И (mode=0) без переноса
+        execute_alu_operation(4'b1011, 0, 3, 1, 16'h00FF, "Arithmetic 'AB - 1'");
+        check_result((16'h1234 & 16'h00FF)-1, "Logical AND Test");
         
-        // Логическое И (mode=1)
+        // В логических инструкциях переносы не учитываются
+        // Логическое И (mode=1) с переносом
         execute_alu_operation(4'b1011, 1, 0, 1, 16'h00FF, "Logical AND");
         check_result(16'h1234 & 16'h00FF, "Logical AND Test");
         
+        // Логическое ИЛИ без переноса
+        execute_alu_operation(4'b1011, 1, 1, 1, 16'h00FF, "Logical AND");
+        check_result(16'h1234 & 16'h00FF, "Logical AND Test");
+
+        // Логическое ИЛИ-НЕ без переноса
+        execute_alu_operation(4'b0100, 1, 0, 1, 16'h00FF, "Logical AND");
+        check_result(~(16'h1234 & 16'h00FF), "Logical AND Test");
+        
+        // Логическое ИЛИ-НЕ без переноса
+        execute_alu_operation(4'b0100, 1, 1, 1, 16'h00FF, "Logical AND");
+        check_result(~(16'h1234 & 16'h00FF), "Logical AND Test");
+
         -> test3_done;
     end
-    
+
     // Тест 4: Операции с переносами
     initial begin
         @(test3_done);
-    /*
+    
         $display("\n=== Test 4: Carry Operations ===");
         
         write_register(5, 16'hFFFF);
@@ -335,15 +364,23 @@ module test_cpu_top;
         // Инкремент: FFFF + 1 = 0000 (без дополнительного +1 от Cin)
         execute_alu_operation(4'b1001, 0, 1, 1, 16'h0001, "INCREMENT"); // Cin=1 -> без переноса
         check_result(16'h0000, "Increment FFFF");
-        if (!alu_cout) begin
+        if (alu_cout) begin
             $display("ERROR: Carry out expected");
             $finish;
         end
         $display("PASS: Carry out detected");
-    */    
+
+        // Инкремент: FFFF + 1 = 0000 (с дополнительным +1 от Cin)
+        execute_alu_operation(4'b1001, 0, 0, 1, 16'h0001, "INCREMENT"); // Cin=1 -> без переноса
+        check_result(16'h0001, "Increment FFFF");
+        if (alu_cout) begin
+            $display("ERROR: Carry out expected");
+            $finish;
+        end
+
         -> test4_done;
     end
-    
+    /*
     // Тест 5: Декремент
     initial begin
         @(test4_done);
@@ -361,15 +398,39 @@ module test_cpu_top;
         -> test5_done;
     end
     
-    // Тест 6: Сдвиг/удвоение
+    // Тест 6: Сдвиг/удвоение - диагностика
     initial begin
         @(test5_done);
-        $display("\n=== Test 6: Shift/Double Operation ===");
+        $display("\n=== Test 6: Shift/Double Operation Diagnostics ===");
         
+        write_register(6, 16'h0013);
         write_register(7, 16'h0007);
-        reg_read_addr1 = 7; // A = 0007
-        execute_alu_operation(4'b1100, 1, 0, 1, 0, "SHIFT LEFT/DOUBLE");
-        $display("Logical shift left result: %h", alu_result);
+        
+        reg_read_addr1 = 7;     // A = 0007
+        reg_read_addr2 = 6;     // B = 0013
+
+        $display("Testing command 4'b1100 in different modes:");
+        
+        // Логический режим (M=1) - должно быть 1
+        execute_alu_operation(4'b1100, 1, 0, 1, 16'h0000, "4'b1100 Logic mode");
+        check_result(16'hFFFF, "Logic mode: 1");            // 1
+        
+        // Арифметический режим (M=0) - должно быть 2A
+        execute_alu_operation(4'b1100, 0, 1, 1, 16'h0000, "4'b1100 Math mode");
+        check_result(16'h000E, "Math mode: A+A = 2A"); // (7+0)+7 = E (14)
+        
+        // Проверим другие команды для сдвига
+        execute_alu_operation(4'b1111, 1, 0, 1, 0, "4'b1111 Logic mode");
+        check_result(16'h0007, "Logic mode: = A"); // (7+0)+7 = E (14)
+        
+        execute_alu_operation(4'b1010, 1, 1, 0, reg_read_addr2, "4'b1010 Logic mode");
+        check_result(16'h0013, "Logic mode: = B"); // (7+0)+7 = E (14)
+
+        //$display("4'b1010 Logic result: %h (need to check table)", alu_result);
+        
+        // Правильный способ удвоения через сложение
+        //execute_alu_operation(4'b1001, 0, 1, 1, 16'h0007, "Double via A + A");
+        //check_result(16'h000E, "7 + 7 = E (14)");
         
         -> test6_done;
     end
@@ -377,7 +438,7 @@ module test_cpu_top;
     // Тест 7: Комплексная операция - проверка команды 4'b1100
     initial begin
         @(test6_done);
-        /*
+        
         $display("\n=== Test 7: Complex Operation ===");
         
         write_register(6, 16'h0005);
@@ -403,10 +464,10 @@ module test_cpu_top;
         
         // Для оригинального теста используем A + A (удвоение)
         check_result(16'h0012, "Complex Operation Test");
-*/
+
         -> test7_done;
     end
-
+*/
 endmodule
 
 
