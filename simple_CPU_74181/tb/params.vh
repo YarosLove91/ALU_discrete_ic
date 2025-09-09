@@ -1,6 +1,7 @@
 // ==================== ФАЙЛ ПАРАМЕТРОВ И КОНСТАНТ ====================
 // params.v - Общие параметры и константы для проекта
-
+`ifndef PARAMS_VH
+`define PARAMS_VH
 // Разрядность данных
 localparam DATA_WIDTH = 16;
 localparam ADDR_WIDTH = 4;  // Для 16 регистров (2^4 = 16)
@@ -24,6 +25,7 @@ localparam CARRY_OUT_ENABLED  = 1'b0;  // С переносом
 
 
 // Коды операций АЛУ
+//TODO: Доделать. Сейчас не полный набор
 localparam OP_ADD      = 4'b1001; // Сложение A + B
 localparam OP_SUB      = 4'b0110; // Вычитание A - B
 localparam OP_AND      = 4'b1011; // Логическое И
@@ -61,16 +63,44 @@ localparam TEST_VAL_2 = 16'h5678;
 localparam TEST_VAL_3 = 16'h9ABC;
 localparam TEST_VAL_4 = 16'hDEFF;
 
-// Маски для различных битовых сценариев
-localparam TEST_MASK_LOW_ONES  = 16'h00FF;
-localparam TEST_MASK_HIGH_ONES  = 16'hFF00;
+// Маски для различных cценариев жестко заданные
 
-localparam TEST_MASK_CHESS_EVENS = 16'hF0F0;
-localparam TEST_MASK_CHESS_ODDS = 16'h0F0F;
+// localparam TEST_MASK_LOW_ONES  = 16'h00FF;
+// localparam TEST_MASK_HIGH_ONES  = 16'hFF00;
+// 
+// localparam TEST_MASK_CHESS_EVENS = 16'hF0F0;
+// localparam TEST_MASK_CHESS_ODDS = 16'h0F0F;
+//
+// localparam TEST_MASK_ONES_ODDS = 16'h5555;
+// localparam TEST_MASK_ONES_EVENS = 16'hAAAA;
 
-localparam TEST_MASK_ONES_ODDS = 16'h5555;
-localparam TEST_MASK_ONES_EVENS = 16'hAAAA;
 
-localparam TEST_ZERO  = 16'h0000;
-localparam TEST_ONES  = 16'hFFFF;
+// Параметризованные маски
+localparam TEST_MASK_ONES_LOW  = {{DATA_WIDTH/2{1'b0}}, {DATA_WIDTH/2{1'b1}}};  // 00FF для 16-bit
+localparam TEST_MASK_ONES_HIGH = {{DATA_WIDTH/2{1'b1}}, {DATA_WIDTH/2{1'b0}}};  // FF00 для 16-bit
+localparam TEST_MASK_ONES_QUARTER = {{3*DATA_WIDTH/4{1'b0}}, {DATA_WIDTH/4{1'b1}}}; // 000F для 16-bit
 
+localparam TEST_MASK_CHESS_EVENS = {DATA_WIDTH/2{2'b10}};   // 10101010... 16'hAAAA;
+localparam TEST_MASK_CHESS_ODDS  = {DATA_WIDTH/2{2'b01}};   // 01010101... 16'hAAAA;
+
+localparam TEST_ZERO  = {DATA_WIDTH{1'b0}};  // 16'h0000
+localparam TEST_ONES  = {DATA_WIDTH{1'b1}};  // 16'hFFFF
+
+localparam INDIFFERENT_VAL = {DATA_WIDTH{1'bx}};
+localparam INDIFFERENT_REG = 4'bXXXX;   // Для неиспользуемых регистров
+
+// Дополнительные полезные константы
+localparam TEST_ONE   = {{DATA_WIDTH-1{1'b0}}, 1'b1};  // 16'h0001
+localparam TEST_MSB   = {1'b1, {DATA_WIDTH-1{1'b0}}};  // 16'h8000
+localparam TEST_LSB   = TEST_ONE;
+
+
+// Функция для получения имени регистра по адресу
+function string get_reg_name;
+    input [ADDR_WIDTH-1:0] addr;
+    begin
+        get_reg_name = $sformatf("REG_R%0h", addr);
+    end
+endfunction
+
+`endif // PARAMS_VH
