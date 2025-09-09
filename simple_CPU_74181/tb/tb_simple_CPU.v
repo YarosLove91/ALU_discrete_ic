@@ -2,6 +2,24 @@
 
 module test_cpu_top;
 
+    // Макросы для упрощения вызова execute_alu_operation
+    `define EXEC_ALU_REG(src1, src2, dst, op, mode, cin, name) \
+        execute_alu_operation(src1, src2, dst, op, mode, cin, B_SOURCE_REGISTER, 0, name)
+
+    `define EXEC_ALU_IMM(src1, dst, op, mode, cin, imm, name) \
+        execute_alu_operation(src1, 0, dst, op, mode, cin, B_SOURCE_IMMEDIATE, imm, name)
+
+    // Макросы для проверки результатов
+    `define CHECK_RESULT(reg_addr, expected_value, test_name) \
+        check_result(reg_addr, expected_value, 1'bx, 0, test_name)
+
+    `define CHECK_RESULT_WITH_COUT(reg_addr, expected_value, expected_cout, test_name) \
+        check_result(reg_addr, expected_value, expected_cout, 1, test_name)
+
+    // Макрос для чтения регистра
+    `define READ_REG(reg_addr, reg_value) \
+        read_register(reg_addr, reg_value)
+
     // Параметры
     localparam DATA_WIDTH = 16;
     localparam NUM_REGS = 8;
