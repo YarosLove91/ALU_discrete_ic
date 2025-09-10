@@ -313,11 +313,11 @@ module test_cpu_top;
         write_register(REG_R0, TEST_ZERO);   // Test ZERO`s pattern
         write_register(REG_R1, TEST_VAL_1);  // Test pattern 1
         write_register(REG_R2, TEST_VAL_2);  // Test pattern 2  
-        write_register(REG_R3, TEST_MASK_LOW_ONES);  // Mask for AND
-        write_register(REG_R4, TEST_MASK_HIGH_ONES);  // Mask for OR
-        write_register(REG_R5, TEST_MASK_ONES_EVENS);  // Pattern for XOR
-        write_register(REG_R6, TEST_MASK_ONES_ODDS );  // Pattern for complement
-        
+        write_register(REG_R3, TEST_MASK_ONES_LOW);  // Mask for AND
+        write_register(REG_R4, TEST_MASK_ONES_HIGH);  // Mask for OR
+        write_register(REG_R5, TEST_MASK_CHESS_EVENS);  // Pattern for XOR
+        write_register(REG_R6, TEST_MASK_CHESS_ODDS );  // Pattern for complement
+
         $display("\n=== Test 1: Logic operations ===");
         $display("\n=== Test 1.1: AND Operations (mode=Logic) ===");
 
