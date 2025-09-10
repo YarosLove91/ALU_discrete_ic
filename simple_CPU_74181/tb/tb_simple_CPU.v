@@ -130,11 +130,11 @@ module test_cpu_top;
             @(posedge clk);
             #1;
             reg_write_enable = 0;
-            $display("Time %t: Write %h to reg%d", $time, data, addr);
+            $display("Time %t: Write %h to %s", $time, data, get_reg_name(addr));
         end
     endtask
-    
-    // Task для выполнения операции АЛУ
+
+
     task execute_alu_operation;
         input [3:0] operation;
         input mode;
@@ -160,42 +160,86 @@ module test_cpu_top;
         end
     endtask
     
-    // Helper function для имени переноса
-    function string get_carry_name;
-        input carry;
-        begin
-            if (carry == CARRY_IN_DISABLED) begin
-                get_carry_name = "Disabled";
-            end else begin
-                get_carry_name = "Enabled";
-            end
-        end
-    endfunction
-
-    // Helper function для имени источника B
-    function string get_b_source_name;
-        input b_sel;
-        begin
-            if (b_sel == B_SOURCE_REGISTER) begin
-                get_b_source_name = "Register";
-            end else begin
-                get_b_source_name = "Immediate";
-            end
-        end
-    endfunction
-
-    // Task для проверки результата
-    task check_result;
-        input [DATA_WIDTH-1:0] expected;
+    task check_result_simple;
+        input [ADDR_WIDTH-1:0] reg_addr;
+        input [DATA_WIDTH-1:0] expected_value;
+        input expected_cout;
+        input check_cout_enable;
         input string test_name;
+        
+        reg [DATA_WIDTH-1:0] actual_value;
         begin
-            if (alu_result !== expected) begin
-                $display("ERROR in %s: Expected %h, Got %h", 
-                         test_name, expected, alu_result);
+            // Читаем значение из регистра
+            read_register(reg_addr, actual_value);
+            
+            // Проверяем основное значение
+            if (actual_value !== expected_value) begin
+                $display("Time %t: ✗ VALUE FAIL %s: %s = %h (expected %h)", 
+                        $time, test_name, get_reg_name(reg_addr), actual_value, expected_value);
+                $display("Time %t: ✗ TEST FAILED: %s", $time, test_name);
+                $finish;
+            end
+            
+            // Проверяем Cout, если включено
+            if (check_cout_enable && alu_cout !== expected_cout) begin
+                $display("Time %t: ✗ COUT FAIL %s: Cout = %s (expected %s)", 
+                        $time, test_name,
+                        (alu_cout ? "YES" : "NO"),
+                        (expected_cout ? "YES" : "NO"));
+                $display("Time %t: ✗ TEST FAILED: %s", $time, test_name);
+                $finish;
+            end
+            
+            // Вывод успеха
+            $display("Time %t: ✓ PASS %s: %s = %h%s", 
+                    $time, test_name, get_reg_name(reg_addr), actual_value,
+                    check_cout_enable ? $sformatf(", Cout = %s", (alu_cout ? "YES" : "NO")) : "");
+        end
+    endtask
+
+    task check_result;
+        input [ADDR_WIDTH-1:0] reg_addr;
+        input [DATA_WIDTH-1:0] expected_value;
+        input expected_cout;
+        input check_cout_enable;
+        input string test_name;
+        
+        reg [DATA_WIDTH-1:0] actual_value;
+        begin
+            // Читаем значение из регистра
+            read_register(reg_addr, actual_value);
+            
+            // Проверяем основное значение
+            if (actual_value !== expected_value) begin
+                $display("==================================================================");
+                $display("Time %t: ✗ CRITICAL ERROR IN TEST: %s", $time, test_name);
+                $display("REGISTER VALUE MISMATCH:");
+                $display("  Register: %s", get_reg_name(reg_addr));
+                $display("  Expected: %h", expected_value);
+                $display("  Actual:   %h", actual_value);
+                $display("  Difference: %h", actual_value ^ expected_value);
+                $display("==================================================================");
+                $finish;
+            end
+            
+            // Проверяем Cout, если включено
+            if (check_cout_enable && alu_cout !== expected_cout) begin
+                $display("==================================================================");
+                $display("Time %t: ✗ CRITICAL ERROR IN TEST: %s", $time, test_name);
+                $display("CARRY FLAG MISMATCH:");
+                $display("  Expected Cout: %s", (expected_cout ? "YES" : "NO"));
+                $display("  Actual Cout:   %s", (alu_cout ? "YES" : "NO"));
+                $display("  Register %s = %h", get_reg_name(reg_addr), actual_value);
+                $display("==================================================================");
                 $finish;
             end else begin
                 $display("PASS: %s - Result %h", test_name, alu_result);
             end
+            
+            // Вывод успеха
+            $display("Time %t: ✓ PASS %s: %s = %h%s", 
+                    $time, test_name, get_reg_name(reg_addr), actual_value,
+                    check_cout_enable ? $sformatf(", Cout = %s", (alu_cout ? "YES" : "NO")) : "");
         end
     endtask
     
