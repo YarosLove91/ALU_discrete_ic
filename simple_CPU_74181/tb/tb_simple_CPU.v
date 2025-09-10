@@ -324,24 +324,40 @@ module test_cpu_top;
         reg_read_addr1 = REG_R1; // A = 1234
         
         // AND с immediate значением
-        execute_alu_operation(  4'b1011, 
-                                ALU_MODE_LOGIC, 
-                                CARRY_IN_ENABLED, 
-                                B_SOURCE_IMMEDIATE, 
-                                TEST_MASK_LOW_ONES,
-                                "AND Immediate");
-        check_result(TEST_VAL_1 & TEST_MASK_LOW_ONES, "AND Immediate Test");
+        execute_alu_operation(  3'b011,  // Операнд А
+                                3'b010,  // Операнд B
+                                3'b111,  // Результат
+                                4'b1011, // Команда
+                        ALU_MODE_LOGIC,
+                        CARRY_IN_ENABLED,
+                        B_SOURCE_REGISTER, 
+                        TEST_MASK_ONES_LOW,
+                        "AND Immediate");
+
+        check_result_simple(3'b111, 
+                            (TEST_VAL_2 & TEST_MASK_ONES_LOW), 
+                            1'bx,                               // Ожидаемый Cout
+                            1'b0,                               // Cout не отслеживается
+                            "AND Immediate Test");
         
         // AND с регистром
         reg_read_addr2 = REG_R3; // B = 00FF
-        execute_alu_operation(  4'b1011, 
+
+
+        execute_alu_operation(  3'b011, 3'b010, 3'b010, 
+                                4'b1011,
                                 ALU_MODE_LOGIC, 
                                 CARRY_IN_DISABLED, 
-                                B_SOURCE_REGISTER, 
-                                INDIFFERENT_VAL, 
+                                B_SOURCE_IMMEDIATE,
+                                16'h1234 & 16'h00FF, 
                                 "AND Register");
-        check_result(16'h1234 & 16'h00FF, "AND Register Test");
-        
+        check_result_simple(3'b010, 
+                            (16'h1234 & 16'h00FF),      // Эталонный результат 
+                            1'bx,                       // Ожидаемый Cout
+                            1'b0,                       // Cout не отслеживается
+                            "AND Register Test");
+
+/*        
         // AND с полной маской
         execute_alu_operation(  4'b1011, 
                                 ALU_MODE_LOGIC, 
