@@ -91,17 +91,35 @@ module test_cpu_top;
     event test1_done, test2_done, test3_done, test4_done, test5_done;
     event test6_done, test7_done, test8_done, test9_done, test10_done;
     event test11_done, test12_done; // Добавлены новые события для логических тестов
-    
-    // Helper functions для лучшей читаемости
-    function string get_mode_name;
-        input mode;
+
+    task read_register_s;
+        input [ADDR_WIDTH-1:0] reg_addr;
+        output [DATA_WIDTH-1:0] reg_value;
         begin
-            get_mode_name = (mode == 0) ? "Math" : "Logic";
+            // Устанавливаем адрес для чтения
+            reg_read_addr1 = reg_addr;
+            // Ждем такт для обновления выходов регистрового файла
+            @(posedge clk);
+            #1;
+            // Получаем значение
+            reg_value = reg_read_data1;
+            $display("Time %t: READ REG %s = %h", $time, get_reg_name(reg_addr), reg_value);
         end
-    endfunction
-    
-    
-    // Task для записи в регистр
+    endtask
+
+    task read_register;
+        input [ADDR_WIDTH-1:0] reg_addr;
+        output [DATA_WIDTH-1:0] reg_value;
+        begin
+            // Устанавливаем адрес для чтения
+            reg_read_addr1 = reg_addr;
+            // Ждем такт для обновления выходов регистрового файла
+            @(posedge clk);
+            #1;
+            reg_value = reg_read_data1;
+        end
+    endtask
+
     task write_register;
         input [ADDR_WIDTH-1:0] addr;
         input [DATA_WIDTH-1:0] data;
