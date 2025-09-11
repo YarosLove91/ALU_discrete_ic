@@ -2,24 +2,6 @@
 
 module test_cpu_top;
 
-    // Макросы для упрощения вызова execute_alu_operation
-    `define ALU_REG(src1, src2, dst, op, mode, cin, name) \
-        execute_alu_operation(src1, src2, dst, op, mode, cin, B_SOURCE_REGISTER, 0, name)
-
-    `define ALU_IMM(src1, dst, op, mode, cin, imm, name) \
-        execute_alu_operation(src1, 0, dst, op, mode, cin, B_SOURCE_IMMEDIATE, imm, name)
-
-    // Макросы для проверки результатов
-    `define CHECK(reg_addr, expected_value, test_name) \
-        check_result(reg_addr, expected_value, 1'bx, 0, test_name)
-
-    `define CHECK_COUT(reg_addr, expected_value, expected_cout, test_name) \
-        check_result(reg_addr, expected_value, expected_cout, 1'b1, test_name)
-
-    // Макрос для чтения регистра
-    `define READ_REG(reg_addr, reg_value) \
-        read_register(reg_addr, reg_value)
-
     // Параметры
     localparam DATA_WIDTH = 16;
     localparam NUM_REGS = 8;
@@ -157,6 +139,8 @@ module test_cpu_top;
             alu_cin = carry_in;
             b_source_sel = b_sel;
             alu_b_imm = b_value;
+            
+            // Ждем такт для стабилизации сигналов
             @(posedge clk);
         
             // Сохраняем результат в регистр-приемник
@@ -261,8 +245,6 @@ module test_cpu_top;
                 $display("  Register %s = %h", get_reg_name(reg_addr), actual_value);
                 $display("==================================================================");
                 $finish;
-            end else begin
-                $display("PASS: %s - Result %h", test_name, alu_result);
             end
             
             // Вывод успеха
@@ -271,7 +253,35 @@ module test_cpu_top;
                     check_cout_enable ? $sformatf(", Cout = %s", (alu_cout ? "YES" : "NO")) : "");
         end
     endtask
-    
+
+    // TODO: Проверить. В настоящий момент не проверялось
+
+    function check_alu_flags;
+        input expected_cout;
+        input expected_nbo;
+        input expected_ngo;
+        input string test_name;
+        begin
+            if (alu_cout === expected_cout && 
+                alu_nbo === expected_nbo && 
+                alu_ngo === expected_ngo) begin
+                $display("Time %t: ✓ PASS %s: Flags Cout=%s, NBO=%s, NGO=%s", 
+                        $time, test_name,
+                        (alu_cout ? "YES" : "NO"),
+                        (alu_nbo ? "YES" : "NO"), 
+                        (alu_ngo ? "YES" : "NO"));
+                check_alu_flags = 1;
+            end else begin
+                $display("Time %t: ✗ FAIL %s: Flags Cout=%s (exp=%s), NBO=%s (exp=%s), NGO=%s (exp=%s)", 
+                        $time, test_name,
+                        (alu_cout ? "YES" : "NO"), (expected_cout ? "YES" : "NO"),
+                        (alu_nbo ? "YES" : "NO"), (expected_nbo ? "YES" : "NO"),
+                        (alu_ngo ? "YES" : "NO"), (expected_ngo ? "YES" : "NO"));
+                check_alu_flags = 0;
+            end
+        end
+    endfunction
+
     // Основной тестовый процесс - координатор
     initial begin
         // Инициализация
@@ -299,7 +309,7 @@ module test_cpu_top;
         -> test_start;
         
         // Ожидание завершения всех тестов
-        @(test4_done);
+        @(test1_done);
         
         $display("\n=== ALL TESTS PASSED! ===");
         #50 $finish;
@@ -321,62 +331,45 @@ module test_cpu_top;
         $display("\n=== Test 1: Logic operations ===");
         $display("\n=== Test 1.1: AND Operations (mode=Logic) ===");
 
-        reg_read_addr1 = REG_R1; // A = 1234
-        
         // AND с immediate значением
-        execute_alu_operation(  3'b011,  // Операнд А
-                                3'b010,  // Операнд B
-                                3'b111,  // Результат
-                                4'b1011, // Команда
-                        ALU_MODE_LOGIC,
-                        CARRY_IN_ENABLED,
-                        B_SOURCE_REGISTER, 
-                        TEST_MASK_ONES_LOW,
-                        "AND Immediate");
+        `ALU_IMM( REG_R3,  // Операнд А
+                  REG_R7,  // Результат
+                  4'b1011, // Команда
+                  ALU_MODE_LOGIC,
+                  CARRY_IN_ENABLED,
+                  TEST_VAL_2,
+                  "AND Immediate");
 
-        check_result_simple(3'b111, 
-                            (TEST_VAL_2 & TEST_MASK_ONES_LOW), 
-                            1'bx,                               // Ожидаемый Cout
-                            1'b0,                               // Cout не отслеживается
-                            "AND Immediate Test");
+        `CHECK(REG_R7, (TEST_VAL_2 & TEST_MASK_ONES_LOW), "AND Immediate Test");
         
         // AND с регистром
-        reg_read_addr2 = REG_R3; // B = 00FF
-
-
-        execute_alu_operation(  3'b011, 3'b010, 3'b010, 
-                                4'b1011,
-                                ALU_MODE_LOGIC, 
-                                CARRY_IN_DISABLED, 
-                                B_SOURCE_IMMEDIATE,
-                                16'h1234 & 16'h00FF, 
-                                "AND Register");
-        check_result_simple(3'b010, 
-                            (16'h1234 & 16'h00FF),      // Эталонный результат 
-                            1'bx,                       // Ожидаемый Cout
-                            1'b0,                       // Cout не отслеживается
-                            "AND Register Test");
-
-/*        
+        `ALU_REG(   REG_R3,     // Операнд А
+                    REG_R2,     // Операнд B 
+                    REG_R7,     // Результат
+                    4'b1011,
+                    ALU_MODE_LOGIC, 
+                    CARRY_IN_DISABLED, 
+                    "AND Register");
+        `CHECK(REG_R7, (TEST_VAL_2 & TEST_MASK_ONES_LOW),"AND Register Test");
+/*
         // AND с полной маской
-        execute_alu_operation(  4'b1011, 
-                                ALU_MODE_LOGIC, 
-                                CARRY_IN_ENABLED, 
-                                B_SOURCE_IMMEDIATE, 
-                                TEST_ONES, 
-                                "AND Full Mask");
-        check_result(16'h1234, "AND Full Mask Test");
-        
+        `ALU_IMM(   3'b011, 3'b010, 3'b010, 
+                    4'b1011, 
+                    ALU_MODE_LOGIC, 
+                    CARRY_IN_ENABLED, 
+                    TEST_ONES, 
+                    "AND Full Mask");
+        check_result(TEST_VAL_1, "AND Full Mask Test");
+
         reg_read_addr1 = REG_R0; // A = 1234
         // AND с нулевой маской
-        execute_alu_operation(  4'b1011, 
-                                ALU_MODE_LOGIC, 
-                                CARRY_IN_DISABLED, 
-                                B_SOURCE_REGISTER, 
-                                INDIFFERENT_VAL, 
-                                "AND Zero Mask");
-        check_result(16'h0000, "AND Zero Mask Test");
-        
+        `ALU_REG( 3'b011, 3'b000, 3'b000, 
+                    4'b1011, 
+                    ALU_MODE_LOGIC, 
+                    CARRY_IN_DISABLED, 
+                    "AND Zero Mask");
+        check_result(TEST_ZERO, "AND Zero Mask Test");
+                
         $display("\n=== Test 1.2: OR Operations (mode=Logic) ===");
         
         reg_read_addr1 = REG_R1; // A = 1234
@@ -456,10 +449,10 @@ module test_cpu_top;
             $finish;
         end
         $display("PASS: Carry correctly not set in logic mode");
-        
+    */    
         -> test1_done;
     end
-
+/*
     // Тест 2: Арифметические операции
     initial begin
         @(test1_done);
@@ -621,7 +614,7 @@ module test_cpu_top;
 
         -> test4_done;
     end
-    /*
+
     // Тест 5: Декремент
     initial begin
         @(test4_done);

@@ -103,4 +103,36 @@ function string get_reg_name;
     end
 endfunction
 
+    // Макросы для упрощения вызова execute_alu_operation
+    `define ALU_REG(src1, src2, dst, op, mode, cin, name)  \
+        execute_alu_operation(src1, src2, dst, op, mode, cin, B_SOURCE_REGISTER, INDIFFERENT_VAL, name)
+
+    `define ALU_IMM(src1, dst, op, mode, cin, imm, name) \
+        execute_alu_operation(src1, INDIFFERENT_REG, dst, op, mode, cin, B_SOURCE_IMMEDIATE, imm, name)
+
+    // 
+    `define ALU_M_REG(src1, src2, dst, op, cin, name)  \
+        ALU_REG(src1, src2, dst, op, ALU_MODE_ARITHMETIC, cin, name)
+
+    `define ALU_M_IMM(src1, dst, op, cin, imm, name) \
+        execute_alu_operation(src1, INDIFFERENT_REG, dst, op, ALU_MODE_ARITHMETIC, cin, B_SOURCE_IMMEDIATE, imm, name)
+
+    // Макросы для упрощения вызова execute_alu_operation
+    `define ALU_L_REG(src1, src2, dst, op, cin, name)  \
+        ALU_REG(src1, src2, dst, op, ALU_MODE_LOGIC, cin, name)
+
+    `define ALU_L_IMM(src1, dst, op, cin, imm, name) \
+        execute_alu_operation(src1, INDIFFERENT_REG, dst, op, ALU_MODE_LOGIC, cin, B_SOURCE_IMMEDIATE, imm, name)
+
+    // Макросы для проверки результатов
+    `define CHECK(reg_addr, expected_value, test_name) \
+        check_result(reg_addr, expected_value, 1'bx, 0, test_name)
+
+    `define CHECK_COUT(reg_addr, expected_value, expected_cout, test_name) \
+        check_result(reg_addr, expected_value, expected_cout, 1'b1, test_name)
+
+    // Макрос для чтения регистра
+    `define READ_REG(reg_addr, reg_value) \
+        read_register(reg_addr, reg_value)
+
 `endif // PARAMS_VH
