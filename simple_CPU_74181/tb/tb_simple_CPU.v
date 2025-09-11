@@ -332,124 +332,135 @@ module test_cpu_top;
         $display("\n=== Test 1.1: AND Operations (mode=Logic) ===");
 
         // AND с immediate значением
-        `ALU_IMM( REG_R3,  // Операнд А
+        `ALU_L_IMM( REG_R3,  // Операнд А
                   REG_R7,  // Результат
                   4'b1011, // Команда
-                  ALU_MODE_LOGIC,
                   CARRY_IN_ENABLED,
                   TEST_VAL_2,
                   "AND Immediate");
 
-        `CHECK(REG_R7, (TEST_VAL_2 & TEST_MASK_ONES_LOW), "AND Immediate Test");
+        `CHECK( REG_R7, 
+                (TEST_VAL_2 & TEST_MASK_ONES_LOW), 
+                "AND Immediate Test");
         
         // AND с регистром
-        `ALU_REG(   REG_R3,     // Операнд А
-                    REG_R2,     // Операнд B 
-                    REG_R7,     // Результат
+        `ALU_L_REG( REG_R3, REG_R2,    // Операнды
+                    REG_R7,            // Результат
                     4'b1011,
-                    ALU_MODE_LOGIC, 
                     CARRY_IN_DISABLED, 
                     "AND Register");
-        `CHECK(REG_R7, (TEST_VAL_2 & TEST_MASK_ONES_LOW),"AND Register Test");
-/*
+
+        `CHECK(REG_R7, 
+              (TEST_VAL_2 & TEST_MASK_ONES_LOW),
+              "AND Register Test");
+
         // AND с полной маской
-        `ALU_IMM(   3'b011, 3'b010, 3'b010, 
+        `ALU_L_IMM( REG_R3, 
+                    REG_R7,
                     4'b1011, 
-                    ALU_MODE_LOGIC, 
                     CARRY_IN_ENABLED, 
                     TEST_ONES, 
                     "AND Full Mask");
-        check_result(TEST_VAL_1, "AND Full Mask Test");
 
-        reg_read_addr1 = REG_R0; // A = 1234
+        `CHECK(REG_R7, 
+               TEST_MASK_ONES_LOW & TEST_ONES, 
+               "AND Full Mask Test");
+        
         // AND с нулевой маской
-        `ALU_REG( 3'b011, 3'b000, 3'b000, 
+        `ALU_L_REG( REG_R3, REG_R5, 
+                    REG_R7, 
                     4'b1011, 
-                    ALU_MODE_LOGIC, 
                     CARRY_IN_DISABLED, 
                     "AND Zero Mask");
-        check_result(TEST_ZERO, "AND Zero Mask Test");
-                
+
+        `CHECK(REG_R7, 
+              (TEST_MASK_CHESS_EVENS & TEST_MASK_ONES_LOW), 
+              "AND Zero Mask Test");
+              
         $display("\n=== Test 1.2: OR Operations (mode=Logic) ===");
-        
-        reg_read_addr1 = REG_R1; // A = 1234
-        
+            
         // OR с immediate значением
-        execute_alu_operation(  4'b1110, 
-                                ALU_MODE_LOGIC, 
-                                CARRY_IN_DISABLED, 
-                                B_SOURCE_IMMEDIATE, 
-                                TEST_MASK_HIGH_ONES, 
-                                "OR Immediate FF00");
-        check_result(16'h1234 | 16'hFF00, "OR Immediate Test");
+        `ALU_L_IMM( REG_R1,  
+                    REG_R7,
+                    4'b1110,
+                    CARRY_IN_DISABLED, 
+                    TEST_MASK_ONES_HIGH,
+                    "OR Immediate FF00");
+
+        `CHECK( REG_R7, 
+                TEST_VAL_1| TEST_MASK_ONES_HIGH, 
+                "OR Immediate Test");
         
         // OR с регистром
-        reg_read_addr2 = REG_R4; // B = FF00
-        execute_alu_operation(  4'b1110, 
-                                ALU_MODE_LOGIC, 
-                                CARRY_IN_ENABLED, 
-                                B_SOURCE_REGISTER, 
-                                INDIFFERENT_VAL, 
-                                "OR Register");
-        check_result(16'h1234 | 16'hFF00, "OR Register Test");
+        `ALU_L_REG( REG_R1, REG_R4,
+                    REG_R7, 
+                    4'b1110, 
+                    CARRY_IN_ENABLED, 
+                    "OR Register");
+
+        `CHECK( REG_R7, 
+                TEST_VAL_1 | TEST_MASK_ONES_HIGH, 
+                "OR Register Test");
         
         // OR с нулевой маской
-        execute_alu_operation(  4'b1110, 
-                                ALU_MODE_LOGIC, 
-                                CARRY_IN_ENABLED, 
-                                B_SOURCE_IMMEDIATE, 
-                                TEST_ZERO, 
-                                "OR Zero Mask");
-        check_result(16'h1234, "OR Zero Mask Test");
+        `ALU_L_IMM( REG_R1, REG_R7,
+                    4'b1110, 
+                    CARRY_IN_ENABLED, 
+                    TEST_ZERO, 
+                    "OR Zero Mask");
+        
+        `CHECK( REG_R7, 
+                TEST_VAL_1, 
+                "OR Zero Mask Test");
         
         // OR с полной маской
-        execute_alu_operation(  4'b1110, 
-                                ALU_MODE_LOGIC, 
-                                CARRY_IN_ENABLED, 
-                                B_SOURCE_IMMEDIATE, 
-                                TEST_ONES, 
-                                "OR Full Mask");
-        check_result(16'hFFFF, "OR Full Mask Test");
-        
+        `ALU_L_IMM( REG_R0,REG_R7,
+                    4'b1110, 
+                    CARRY_IN_ENABLED, 
+                    TEST_ONES, 
+                    "OR Full Mask");
+        `CHECK_COUT(REG_R7, TEST_ONES, CARRY_OUT_ENABLED, "OR Full Mask Test");
+   
         $display("\n=== Test 1.3: Other Logic Operations ===");
         
         // XOR операция
-        reg_read_addr1 = REG_R5; // A = AAAA
-        execute_alu_operation(  4'b0110, 
-                                ALU_MODE_LOGIC, 
-                                CARRY_IN_ENABLED, 
-                                B_SOURCE_IMMEDIATE, 
-                                TEST_MASK_ONES_ODDS, 
-                                "XOR with 5555");
-        check_result(16'hAAAA ^ 16'h5555, "XOR Test");
+        `ALU_L_IMM( REG_R5, REG_R7,            
+                    4'b0110, 
+                    CARRY_IN_ENABLED, 
+                    TEST_MASK_CHESS_ODDS, 
+                    "XOR with 5555");
+        `CHECK(REG_R7, TEST_MASK_CHESS_EVENS ^ TEST_MASK_CHESS_ODDS, "XOR Test");
         
+        //write_register(REG_R7, TEST_ONES);
         // NOT операция (XOR с FFFF)
-        execute_alu_operation(  4'b0110, 
-                                ALU_MODE_LOGIC, 
-                                CARRY_IN_ENABLED, 
-                                B_SOURCE_IMMEDIATE, 
-                                TEST_ONES, 
-                                "NOT (XOR with FFFF)");
-        check_result(~16'hAAAA, "NOT Test");
+        `ALU_L_IMM( REG_R7, REG_R7,  
+                    4'b0110, 
+                    CARRY_IN_ENABLED, 
+                    TEST_ONES, 
+                    "NOT (XOR with FFFF)");
+        `CHECK(REG_R7,~TEST_ONES, "NOT Test");
+
         
         $display("\n=== Test 1.4: Carry in Logic Operations ===");
 
         // Проверка что переносы не влияют на логические операции
-        reg_read_addr1 = REG_R1; // A = 1234
-        execute_alu_operation(  4'b1011, 
-                                ALU_MODE_LOGIC, 
-                                CARRY_IN_DISABLED, 
-                                B_SOURCE_IMMEDIATE, 
-                                TEST_MASK_LOW_ONES, 
-                                "AND with Cin=1");
-        check_result(16'h1234 & 16'h00FF, "AND with Carry Test");
+        `ALU_L_IMM( REG_R1,REG_R7,
+                    4'b1011, 
+                    CARRY_IN_DISABLED, 
+                    TEST_MASK_ONES_LOW, 
+                    "AND with Cin=1");
 
-        if (alu_cout !== 1'b0) begin
-            $display("ERROR: Carry should not be set in logic mode");
-            $finish;
-        end
-        $display("PASS: Carry correctly not set in logic mode");
-    */    
+        `CHECK_COUT(REG_R7, 
+                    TEST_VAL_1 & TEST_MASK_ONES_LOW,
+                    1,
+                    "AND with Carry Test");
+
+        // if (alu_cout !== 1'b0) begin
+        //     $display("ERROR: Carry should not be set in logic mode");
+        //     $finish;
+        // end
+        // $display("PASS: Carry correctly not set in logic mode");
+
         -> test1_done;
     end
 /*

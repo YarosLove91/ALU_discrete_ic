@@ -25,7 +25,7 @@ module tb_Circuit74182b;
     reg [3:0] PB, GB;
     reg Cn;
     wire PBo, GBo, Cnx, Cny, Cnz;
-z
+
 
     reg failure_stat = 1'b0;
     reg [63:0]string_state = "Init";

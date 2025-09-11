@@ -2,7 +2,7 @@
 
 VLOG = iverilog
 VVPP = vvp
-VLOG_FLAGS = -g2012
+VLOG_FLAGS = -g2012 -I $(TB_DIR)#$(RTL_DIR)$(TOP_DIR)
 
 # Directories
 RTL_DIR = rtl/src
@@ -27,7 +27,7 @@ help:
 # Rule for each testbench
 define TB_RULE
 $(1):
-	$$(VLOG) $$(VLOG_FLAGS) -m $(1) -o simulation $$(RTL_SOURCES) $$(TOP_SOURCES) $$(TB_DIR)/$(1).v
+	$$(VLOG) $$(VLOG_FLAGS) -m test_cpu_top -o simulation $$(RTL_SOURCES) $$(TOP_SOURCES) $$(TB_DIR)/$(1).v
 ifeq ($$(wave),1)
 	$$(VVPP) simulation +vcd
 else
@@ -38,8 +38,12 @@ endef
 # Generate rules for all testbenches
 $(foreach tb,$(TB_MODULES),$(eval $(call TB_RULE,$(tb))))
 
+# Waveform viewing
+wave:
+	gtkwave *.vcd &
+
 # Clean
 clean:
 	rm -f simulation *.vcd
 
-.PHONY: help clean $(TB_MODULES)
+.PHONY: help clean wave $(TB_MODULES)

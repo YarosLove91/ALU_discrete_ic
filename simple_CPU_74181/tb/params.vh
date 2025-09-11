@@ -119,7 +119,7 @@ endfunction
 
     // Макросы для упрощения вызова execute_alu_operation
     `define ALU_L_REG(src1, src2, dst, op, cin, name)  \
-        ALU_REG(src1, src2, dst, op, ALU_MODE_LOGIC, cin, name)
+        execute_alu_operation(src1, src2, dst, op, ALU_MODE_LOGIC, cin, B_SOURCE_REGISTER, INDIFFERENT_VAL, name)
 
     `define ALU_L_IMM(src1, dst, op, cin, imm, name) \
         execute_alu_operation(src1, INDIFFERENT_REG, dst, op, ALU_MODE_LOGIC, cin, B_SOURCE_IMMEDIATE, imm, name)
