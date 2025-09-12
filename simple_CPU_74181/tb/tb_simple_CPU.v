@@ -332,9 +332,9 @@ module test_cpu_top;
         $display("\n=== Test 1.1: AND Operations (mode=Logic) ===");
 
         // AND с immediate значением
-        `ALU_L_IMM( REG_R3,  // Операнд А
-                  REG_R7,  // Результат
-                  4'b1011, // Команда
+        `ALU_L_IMM( REG_R3,             // Операнд А
+                  REG_R7,               // Результат
+                  OP_L_A_AND_B,         // Команда
                   CARRY_IN_ENABLED,
                   TEST_VAL_2,
                   "AND Immediate");
@@ -346,7 +346,7 @@ module test_cpu_top;
         // AND с регистром
         `ALU_L_REG( REG_R3, REG_R2,    // Операнды
                     REG_R7,            // Результат
-                    4'b1011,
+                    OP_L_A_AND_B,
                     CARRY_IN_DISABLED, 
                     "AND Register");
 
@@ -357,7 +357,7 @@ module test_cpu_top;
         // AND с полной маской
         `ALU_L_IMM( REG_R3, 
                     REG_R7,
-                    4'b1011, 
+                    OP_L_A_AND_B, 
                     CARRY_IN_ENABLED, 
                     TEST_ONES, 
                     "AND Full Mask");
@@ -369,7 +369,7 @@ module test_cpu_top;
         // AND с нулевой маской
         `ALU_L_REG( REG_R3, REG_R5, 
                     REG_R7, 
-                    4'b1011, 
+                    OP_L_A_AND_B, 
                     CARRY_IN_DISABLED, 
                     "AND Zero Mask");
 
@@ -382,7 +382,7 @@ module test_cpu_top;
         // OR с immediate значением
         `ALU_L_IMM( REG_R1,  
                     REG_R7,
-                    4'b1110,
+                    OP_L_A_OR_B,
                     CARRY_IN_DISABLED, 
                     TEST_MASK_ONES_HIGH,
                     "OR Immediate FF00");
@@ -394,7 +394,7 @@ module test_cpu_top;
         // OR с регистром
         `ALU_L_REG( REG_R1, REG_R4,
                     REG_R7, 
-                    4'b1110, 
+                    OP_L_A_OR_B, 
                     CARRY_IN_ENABLED, 
                     "OR Register");
 
@@ -404,7 +404,7 @@ module test_cpu_top;
         
         // OR с нулевой маской
         `ALU_L_IMM( REG_R1, REG_R7,
-                    4'b1110, 
+                    OP_L_A_OR_B, 
                     CARRY_IN_ENABLED, 
                     TEST_ZERO, 
                     "OR Zero Mask");
@@ -415,7 +415,7 @@ module test_cpu_top;
         
         // OR с полной маской
         `ALU_L_IMM( REG_R0,REG_R7,
-                    4'b1110, 
+                    OP_L_A_OR_B, 
                     CARRY_IN_ENABLED, 
                     TEST_ONES, 
                     "OR Full Mask");
@@ -425,7 +425,7 @@ module test_cpu_top;
         
         // XOR операция
         `ALU_L_IMM( REG_R5, REG_R7,            
-                    4'b0110, 
+                    OP_L_XOR, 
                     CARRY_IN_ENABLED, 
                     TEST_MASK_CHESS_ODDS, 
                     "XOR with 5555");
@@ -434,7 +434,7 @@ module test_cpu_top;
         //write_register(REG_R7, TEST_ONES);
         // NOT операция (XOR с FFFF)
         `ALU_L_IMM( REG_R7, REG_R7,  
-                    4'b0110, 
+                    OP_L_XOR, 
                     CARRY_IN_ENABLED, 
                     TEST_ONES, 
                     "NOT (XOR with FFFF)");
@@ -445,14 +445,14 @@ module test_cpu_top;
 
         // Проверка что переносы не влияют на логические операции
         `ALU_L_IMM( REG_R1,REG_R7,
-                    4'b1011, 
+                    OP_L_A_AND_B, 
                     CARRY_IN_DISABLED, 
                     TEST_MASK_ONES_LOW, 
                     "AND with Cin=1");
 
         `CHECK_COUT(REG_R7, 
                     TEST_VAL_1 & TEST_MASK_ONES_LOW,
-                    1,
+                    0,
                     "AND with Carry Test");
 
         // if (alu_cout !== 1'b0) begin

@@ -2,12 +2,13 @@
 // params.v - Общие параметры и константы для проекта
 `ifndef PARAMS_VH
 `define PARAMS_VH
+
+// ==================== ПАРАМЕТРЫ АЛУ ====================
 // Разрядность данных
 localparam DATA_WIDTH = 16;
 localparam ADDR_WIDTH = 4;  // Для 16 регистров (2^4 = 16)
 
-// ==================== ПАРАМЕТРЫ АЛУ ====================
-
+// ==================== CONTROL SIGNALS ====================
 // Режимы работы АЛУ
 localparam ALU_MODE_ARITHMETIC = 1'b0;  // Арифметический режим
 localparam ALU_MODE_LOGIC      = 1'b1;  // Логический режим
@@ -24,36 +25,63 @@ localparam CARRY_OUT_DISABLED = 1'b1;  // Без переноса
 localparam CARRY_OUT_ENABLED  = 1'b0;  // С переносом
 
 
-// Коды операций АЛУ
-//TODO: Доделать. Сейчас не полный набор
-localparam OP_ADD      = 4'b1001; // Сложение A + B
-localparam OP_SUB      = 4'b0110; // Вычитание A - B
-localparam OP_AND      = 4'b1011; // Логическое И
-localparam OP_OR       = 4'b1110; // Логическое ИЛИ
-localparam OP_XOR      = 4'b0110; // Логическое XOR
-localparam OP_NOT      = 4'b0000; // Логическое НЕ
-localparam OP_INC      = 4'b1100; // Инкремент/удвоение
-localparam OP_DEC      = 4'b0011; // Декремент
+// ==================== ALU 74181 COMMANDS ====================
+// Logical Operations (M = 1)
+localparam [3:0] 
+    OP_L_NOT_A          = 4'b0000,   // ~A
+    OP_L_A_OR_B_NOT     = 4'b0001,   // ~(A | B)
+    OP_L_NOT_A_AND_B    = 4'b0010,   // ~A & B
+    OP_L_LOGIC_0        = 4'b0011,   // 0
+    OP_L_NOT_A_AND_NOT_B= 4'b0100,   // ~(A & B)
+    OP_L_NOT_B          = 4'b0101,   // ~B
+    OP_L_XOR            = 4'b0110,   // A ^ B
+    OP_L_A_AND_NOT_B    = 4'b0111,   // A & ~B
+    OP_L_NOT_A_OR_B     = 4'b1000,   // ~A | B
+    OP_L_XNOR           = 4'b1001,   // ~(A ^ B)
+    OP_L_B              = 4'b1010,   // B
+    OP_L_A_AND_B        = 4'b1011,   // A & B
+    OP_L_LOGIC_1        = 4'b1100,   // 1
+    OP_L_A_OR_NOT_B     = 4'b1101,   // A | ~B
+    OP_L_A_OR_B         = 4'b1110,   // A | B
+    OP_L_A              = 4'b1111;   // A
 
-// ==================== КОДЫ РЕГИСТРОВ ====================
+// Arithmetic Operations (M = 0)
+localparam [3:0]
+    OP_A_A_PLUS_CARRY               = 4'b0000, // A + carry
+    OP_A_A_PLUS_B_PLUS_CARRY        = 4'b0001, // (A + B) + carry
+    OP_A_A_PLUS_NOT_B_PLUS_CARRY    = 4'b0010, // (A + ~B) + carry
+    OP_A_MINUS_1_PLUS_CARRY         = 4'b0011, // -1 + carry
+    OP_A_A_PLUS_A_AND_NOT_B         = 4'b0100, // A + (A & ~B)
+    OP_A_A_PLUS_B_PLUS_A_AND_NOT_B  = 4'b0101, // (A + B) + (A & ~B) + 1
+    OP_A_A_MINUS_B_MINUS_CARRY      = 4'b0110, // A - B - carry
+    OP_A_A_AND_NOT_B_MINUS_CARRY    = 4'b0111, // (A & ~B) - carry
+    OP_A_A_PLUS_A_AND_B_PLUS_CARRY  = 4'b1000, // A + (A & B) + carry
+    OP_A_A_PLUS_B                   = 4'b1001, // A + B
+    OP_A_A_PLUS_NOT_B_PLUS_A_AND_B  = 4'b1010, // (A + ~B) + (A & B)
+    OP_A_A_AND_B_MINUS_CARRY        = 4'b1011, // (A & B) - carry
+    OP_A_A_PLUS_A_PLUS_CARRY        = 4'b1100, // A + A + carry
+    OP_A_A_PLUS_B_PLUS_A_PLUS_1     = 4'b1101, // (A + B) + A + 1
+    OP_A_A_PLUS_NOT_B_PLUS_A_PLUS_1 = 4'b1110, // (A + ~B) + A + 1
+    OP_A_A_MINUS_1                  = 4'b1111; // A - 1
 
-// Номера регистров (для удобства)
-localparam REG_R0  = 3'd0;
-localparam REG_R1  = 3'd1;
-localparam REG_R2  = 3'd2;
-localparam REG_R3  = 3'd3;
-localparam REG_R4  = 3'd4;
-localparam REG_R5  = 3'd5;
-localparam REG_R6  = 3'd6;
-localparam REG_R7  = 3'd7;
-localparam REG_R8  = 4'd8;
-localparam REG_R9  = 4'd9;
-localparam REG_R10 = 4'd10;
-localparam REG_R11 = 4'd11;
-localparam REG_R12 = 4'd12;
-localparam REG_R13 = 4'd13;
-localparam REG_R14 = 4'd14;
-localparam REG_R15 = 4'd15;
+
+// ==================== ALIASES FOR COMMON OPERATIONS ====================
+// Combined Operations
+// TODO: Доделать
+localparam [4:0]
+    OP_A_PLUS_CARRY = (ALU_MODE_ARITHMETIC<<4),  OP_A_A_PLUS_CARRY
+
+
+// ==================== REGISTER ADDRESSES ====================
+localparam [2:0]
+    REG_R0 = 3'd0,
+    REG_R1 = 3'd1,
+    REG_R2 = 3'd2,
+    REG_R3 = 3'd3,
+    REG_R4 = 3'd4,
+    REG_R5 = 3'd5,
+    REG_R6 = 3'd6,
+    REG_R7 = 3'd7;
 
 // ==================== ТЕСТОВЫЕ КОНСТАНТЫ ====================
 
