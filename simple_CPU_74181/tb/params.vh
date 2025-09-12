@@ -66,10 +66,49 @@ localparam [3:0]
 
 
 // ==================== ALIASES FOR COMMON OPERATIONS ====================
-// Combined Operations
-// TODO: Доделать
-localparam [4:0]
-    OP_A_PLUS_CARRY = (ALU_MODE_ARITHMETIC<<4),  OP_A_A_PLUS_CARRY
+// ==================== COMBINED ALU COMMANDS ====================
+// [4] - mode (0=math, 1=logic), [3:0] - operation code
+// Format: 1'bM_OOOO (M = mode, OOOO = operation)
+
+// Arithmetic Operations (M = 0)
+localparam [4:0] 
+    OP_A_PLUS_CARRY             = 5'b0_0000, // A + carry
+    OP_A_PLUS_B_PLUS_CARRY      = 5'b0_0001, // A + B + carry
+    OP_A_PLUS_NOT_B_PLUS_CARRY  = 5'b0_0010, // A + ~B + carry
+    OP_MINUS_1_PLUS_CARRY       = 5'b0_0011, // -1 + carry
+    OP_A_PLUS_A_AND_NOT_B       = 5'b0_0100, // A + (A & ~B)
+    OP_A_PLUS_B_PLUS_A_AND_NOT_B= 5'b0_0101, // A + B + (A & ~B) + carry
+    OP_A_MINUS_B_MINUS_CARRY    = 5'b0_0110, // A - B - carry
+    OP_A_AND_NOT_B_MINUS_CARRY  = 5'b0_0111, // (A & ~B) - carry
+    OP_A_PLUS_A_AND_B_PLUS_CARRY= 5'b0_1000, // A + (A & B) + carry
+    OP_A_PLUS_B                 = 5'b0_1001, // A + B
+    OP_A_PLUS_NOT_B_PLUS_A_AND_B= 5'b0_1010, // (A + ~B) + (A & B)
+    OP_A_AND_B_MINUS_CARRY      = 5'b0_1011, // (A & B) - carry
+    OP_A_PLUS_A_PLUS_CARRY      = 5'b0_1100, // A + A + carry
+    OP_A_PLUS_B_PLUS_A_PLUS_1   = 5'b0_1101, // (A + B) + A + 1
+    OP_A_PLUS_NOT_B_PLUS_A_PLUS_1 = 5'b0_1110, // (A + ~B) + A + 1
+    OP_A_MINUS_1                = 5'b0_1111, // A - 1
+    // Logical Operations (M = 1)
+    OP_NOT_A                    = 5'b1_0000,   // ~A
+    OP_A_OR_B_NOT               = 5'b1_0001,   // ~(A | B)
+    OP_NOT_A_AND_B              = 5'b1_0010,   // ~A & B
+    OP_LOGIC_0                  = 5'b1_0011,   // 0
+    OP_NOT_A_AND_NOT_B          = 5'b1_0100,   // ~(A & B)
+    OP_NOT_B                    = 5'b1_0101,   // ~B
+    OP_XOR                      = 5'b1_0110,   // A ^ B
+    OP_A_AND_NOT_B              = 5'b1_0111,   // A & ~B
+    OP_NOT_A_OR_B               = 5'b1_1000,   // ~A | B
+    OP_XNOR                     = 5'b1_1001,   // ~(A ^ B)
+    OP_B                        = 5'b1_1010,   // B
+    OP_A_AND_B                  = 5'b1_1011,   // A & B
+    OP_LOGIC_1                  = 5'b1_1100,   // 1
+    OP_A_OR_NOT_B               = 5'b1_1101,   // A | ~B
+    OP_A_OR_B                   = 5'b1_1110,   // A | B
+    OP_A                        = 5'b1_1111;   // A
+
+// ==================== COMMAND DECODING ====================
+`define GET_ALU_MODE(cmd) (cmd[4])
+`define GET_ALU_OP(cmd) (cmd[3:0])
 
 
 // ==================== REGISTER ADDRESSES ====================
