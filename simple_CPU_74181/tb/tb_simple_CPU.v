@@ -324,120 +324,124 @@ module test_cpu_top;
         $display("\n=== Test 1.1: AND Operations (mode=Logic) ===");
 
         // AND с immediate значением
-        `ALU_L_IMM( REG_R3,             // Операнд А
-                  REG_R7,               // Результат
-                  OP_L_A_AND_B,         // Команда
-                  CARRY_IN_ENABLED,
-                  TEST_VAL_2,
-                  "AND Immediate");
+        `ALU_IMM(REG_R3,               // Операнд А
+                 REG_R7,               // Результат
+                 OP_A_AND_B,           // Команда
+                 CARRY_IN_ENABLED,     // Carry_in = 1
+                 TEST_VAL_2,
+                 "AND Immediate");
 
-        `CHECK( REG_R7, 
-                (TEST_VAL_2 & TEST_MASK_ONES_LOW), 
-                "AND Immediate Test");
+        `CHECK( REG_R7,                             // Проверяемый регистр
+                (TEST_VAL_2 & TEST_MASK_ONES_LOW),  // Ожидаемое значение
+                "AND Immediate Test");              // Вывод для отладки.
         
         // AND с регистром
-        `ALU_L_REG( REG_R3, REG_R2,    // Операнды
-                    REG_R7,            // Результат
-                    OP_L_A_AND_B,
-                    CARRY_IN_DISABLED, 
-                    "AND Register");
+        `ALU_REG(REG_R3, REG_R2,                   // Операнды
+                 REG_R7,                           // Результат
+                 OP_A_AND_B,                       // Команда
+                 CARRY_IN_DISABLED,                // Carry_in - 0
+                 "AND Register");                
 
         `CHECK(REG_R7, 
               (TEST_VAL_2 & TEST_MASK_ONES_LOW),
               "AND Register Test");
 
         // AND с полной маской
-        `ALU_L_IMM( REG_R3, 
-                    REG_R7,
-                    OP_L_A_AND_B, 
-                    CARRY_IN_ENABLED, 
-                    TEST_ONES, 
-                    "AND Full Mask");
+        `ALU_IMM(REG_R3, 
+                 REG_R7,
+                 OP_L_A_AND_B, 
+                 CARRY_IN_ENABLED, 
+                 TEST_ONES, 
+                 "AND Full Mask");
 
         `CHECK(REG_R7, 
                TEST_MASK_ONES_LOW & TEST_ONES, 
                "AND Full Mask Test");
         
         // AND с нулевой маской
-        `ALU_L_REG( REG_R3, REG_R5, 
-                    REG_R7, 
-                    OP_L_A_AND_B, 
-                    CARRY_IN_DISABLED, 
-                    "AND Zero Mask");
+        `ALU_REG(REG_R3, REG_R5, 
+                 REG_R7, 
+                 OP_A_AND_B, 
+                 CARRY_IN_DISABLED, 
+                 "AND Zero Mask");
 
-        `CHECK(REG_R7, 
-              (TEST_MASK_CHESS_EVENS & TEST_MASK_ONES_LOW), 
-              "AND Zero Mask Test");
-              
+        `CHECK( REG_R7, 
+                (TEST_MASK_CHESS_EVENS & TEST_MASK_ONES_LOW), 
+                "AND Zero Mask Test");
+
         $display("\n=== Test 1.2: OR Operations (mode=Logic) ===");
             
         // OR с immediate значением
-        `ALU_L_IMM( REG_R1,  
-                    REG_R7,
-                    OP_L_A_OR_B,
-                    CARRY_IN_DISABLED, 
-                    TEST_MASK_ONES_HIGH,
-                    "OR Immediate FF00");
+        `ALU_IMM(REG_R1,  
+                 REG_R7,
+                 OP_A_OR_B,
+                 CARRY_IN_DISABLED, 
+                 TEST_MASK_ONES_HIGH,
+                 "OR Immediate FF00");
 
         `CHECK( REG_R7, 
                 TEST_VAL_1| TEST_MASK_ONES_HIGH, 
                 "OR Immediate Test");
         
         // OR с регистром
-        `ALU_L_REG( REG_R1, REG_R4,
-                    REG_R7, 
-                    OP_L_A_OR_B, 
-                    CARRY_IN_ENABLED, 
-                    "OR Register");
+        `ALU_REG(REG_R1, REG_R4,
+                 REG_R7, 
+                 OP_A_OR_B, 
+                 CARRY_IN_ENABLED, 
+                 "OR Register");
 
         `CHECK( REG_R7, 
                 TEST_VAL_1 | TEST_MASK_ONES_HIGH, 
                 "OR Register Test");
         
         // OR с нулевой маской
-        `ALU_L_IMM( REG_R1, REG_R7,
-                    OP_L_A_OR_B, 
-                    CARRY_IN_ENABLED, 
-                    TEST_ZERO, 
-                    "OR Zero Mask");
+        `ALU_IMM(REG_R1, REG_R7,
+                 OP_A_OR_B, 
+                 CARRY_IN_ENABLED, 
+                 TEST_ZERO, 
+                 "OR Zero Mask");
         
         `CHECK( REG_R7, 
                 TEST_VAL_1, 
                 "OR Zero Mask Test");
         
         // OR с полной маской
-        `ALU_L_IMM( REG_R0,REG_R7,
-                    OP_L_A_OR_B, 
-                    CARRY_IN_ENABLED, 
+        `ALU_IMM(REG_R0,REG_R7,
+                 OP_A_OR_B, 
+                 CARRY_IN_ENABLED, 
+                 TEST_ONES, 
+                 "OR Full Mask");
+        `CHECK_COUT(REG_R7, 
                     TEST_ONES, 
-                    "OR Full Mask");
-        `CHECK_COUT(REG_R7, TEST_ONES, CARRY_OUT_ENABLED, "OR Full Mask Test");
+                    CARRY_OUT_ENABLED, 
+                    "OR Full Mask Test");
    
         $display("\n=== Test 1.3: Other Logic Operations ===");
         
         // XOR операция
-        `ALU_L_IMM( REG_R5, REG_R7,            
-                    OP_L_XOR, 
-                    CARRY_IN_ENABLED, 
-                    TEST_MASK_CHESS_ODDS, 
-                    "XOR with 5555");
+        `ALU_IMM(REG_R5, REG_R7,            
+                 OP_XOR, 
+                 CARRY_IN_ENABLED, 
+                 TEST_MASK_CHESS_ODDS, 
+                 "XOR with 5555");
         `CHECK(REG_R7, TEST_MASK_CHESS_EVENS ^ TEST_MASK_CHESS_ODDS, "XOR Test");
         
-        //write_register(REG_R7, TEST_ONES);
         // NOT операция (XOR с FFFF)
-        `ALU_L_IMM( REG_R7, REG_R7,  
-                    OP_L_XOR, 
-                    CARRY_IN_ENABLED, 
-                    TEST_ONES, 
-                    "NOT (XOR with FFFF)");
-        `CHECK(REG_R7,~TEST_ONES, "NOT Test");
+        `ALU_IMM(REG_R7, REG_R7,  
+                 OP_XOR, 
+                 CARRY_IN_ENABLED, 
+                 TEST_ONES, 
+                 "NOT (XOR with FFFF)");
+        `CHECK( REG_R7,
+                ~TEST_ONES, 
+                "NOT Test");
 
         
         $display("\n=== Test 1.4: Carry in Logic Operations ===");
 
         // Проверка что переносы не влияют на логические операции
-        `ALU_L_IMM( REG_R1,REG_R7,
-                    OP_L_A_AND_B, 
+        `ALU_IMM( REG_R1,REG_R7,
+                    OP_A_AND_B, 
                     CARRY_IN_DISABLED, 
                     TEST_MASK_ONES_LOW, 
                     "AND with Cin=1");
