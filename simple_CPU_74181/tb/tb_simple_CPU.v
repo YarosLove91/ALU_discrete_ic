@@ -121,8 +121,7 @@ module test_cpu_top;
         input [ADDR_WIDTH-1:0] src_reg1;    // Операнд A (всегда из регистра)
         input [ADDR_WIDTH-1:0] src_reg2;    // Операнд B (если выбран регистр)
         input [ADDR_WIDTH-1:0] dst_reg;     // Регистр для результата
-        input [3:0] operation;              // Операция АЛУ
-        input mode;                         // 0-арифметика, 1-логика
+        input [4:0] operation;              // Комбинированная операция АЛУ {mode, op}
         input carry_in;                     // Входной перенос
         input b_sel;                        // 0-B из регистра, 1-B из immediate
         input [DATA_WIDTH-1:0] b_value;     // Immediate значение для B
@@ -133,9 +132,11 @@ module test_cpu_top;
             reg_read_addr1 = src_reg1;
             reg_read_addr2 = src_reg2;
 
+            // Декодируем комбинированную команду
+            alu_mode = `GET_ALU_MODE(operation);  // mode из бита [4]
+            alu_comm = `GET_ALU_OP(operation);    // operation из битов [3:0]
+            
             // Устанавливаем управляющие сигналы АЛУ
-            alu_comm = operation;
-            alu_mode = mode;
             alu_cin = carry_in;
             b_source_sel = b_sel;
             alu_b_imm = b_value;
@@ -145,31 +146,22 @@ module test_cpu_top;
         
             // Сохраняем результат в регистр-приемник
             write_register(dst_reg, alu_result);
+        begin
+            // Вывод результатов
+            string b_source_info = b_sel ? 
+                $sformatf("IMM=%h", b_value) : 
+                $sformatf("%s=%h", get_reg_name(src_reg2), reg_read_data2);
             
-            // Вывод результатов с использованием if-else вместо тернарного оператора
-            if (b_sel) begin
-                $display("Time %t: %s: %s=%h, IMM=%h, Mode=%s, Cin=%s, Result=%h, Cout=%s → %s", 
-                        $time, op_name,
-                        get_reg_name(src_reg1), reg_read_data1,
-                        // Оптимизировать
-                        b_value,
-                        (mode ? "Logic" : "Math"),
-                        (carry_in ? "Enabled" : "Disabled"),
-                        alu_result,
-                        (alu_cout ? "YES" : "NO"),
-                        get_reg_name(dst_reg));
-            end else begin
-                $display("Time %t: %s: %s=%h, %s=%h, Mode=%s, Cin=%s, Result=%h, Cout=%s → %s", 
-                        $time, op_name,
-                        // Оптимизировать
-                        get_reg_name(src_reg1), reg_read_data1,
-                        get_reg_name(src_reg2), reg_read_data2,
-                        (mode ? "Logic" : "Math"),
-                        (carry_in ? "Enabled" : "Disabled"),
-                        alu_result,
-                        (alu_cout ? "YES" : "NO"),
-                        get_reg_name(dst_reg));
-            end
+            $display("Time %t: %s: %s=%h, %s, Mode=%s, Cin=%s, Result=%h, Cout=%s → %s", 
+                    $time, op_name,
+                    get_reg_name(src_reg1), reg_read_data1,
+                    b_source_info,
+                    (alu_mode ? "Logic" : "Math"),
+                    (carry_in ? "YES" : "NO"),
+                    alu_result,
+                    (alu_cout ? "YES" : "NO"),
+                    get_reg_name(dst_reg));
+        end
         end
     endtask
     
@@ -226,7 +218,7 @@ module test_cpu_top;
             if (actual_value !== expected_value) begin
                 $display("==================================================================");
                 $display("Time %t: ✗ CRITICAL ERROR IN TEST: %s", $time, test_name);
-                $display("REGISTER VALUE MISMATCH:");
+                $display("REGISTER VALUE MISMATCH !");
                 $display("  Register: %s", get_reg_name(reg_addr));
                 $display("  Expected: %h", expected_value);
                 $display("  Actual:   %h", actual_value);
@@ -239,7 +231,7 @@ module test_cpu_top;
             if (check_cout_enable && alu_cout !== expected_cout) begin
                 $display("==================================================================");
                 $display("Time %t: ✗ CRITICAL ERROR IN TEST: %s", $time, test_name);
-                $display("CARRY FLAG MISMATCH:");
+                $display("CARRY FLAG MISMATCH!");
                 $display("  Expected Cout: %s", (expected_cout ? "YES" : "NO"));
                 $display("  Actual Cout:   %s", (alu_cout ? "YES" : "NO"));
                 $display("  Register %s = %h", get_reg_name(reg_addr), actual_value);
