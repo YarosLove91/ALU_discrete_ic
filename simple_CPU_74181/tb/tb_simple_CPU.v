@@ -61,6 +61,124 @@ module test_cpu_top;
         .alu_ngo(alu_ngo)
     );
     
+    // ==================== COVERAGE TRACKING ====================
+    // Coverage structures
+    typedef struct {
+        bit [3:0] alu_op_covered;
+        bit mode_covered [0:1];
+        bit b_source_covered [0:1];
+        bit carry_in_covered [0:1];
+        bit register_accessed [0:NUM_REGS-1];
+        bit test_scenario_covered [1:12];
+    } coverage_t;
+    
+    coverage_t coverage;
+    
+    // Coverage collection tasks
+    task track_alu_operation;
+        input [3:0] opcode;
+        input mode;
+        input b_source;
+        input carry_in;
+        input [ADDR_WIDTH-1:0] reg_addr;
+        begin
+            // Track ALU operations
+            coverage.alu_op_covered[opcode] = 1;
+            coverage.mode_covered[mode] = 1;
+            coverage.b_source_covered[b_source] = 1;
+            coverage.carry_in_covered[carry_in] = 1;
+            
+            // Track register access
+            if (reg_addr < NUM_REGS) begin
+                coverage.register_accessed[reg_addr] = 1;
+            end
+        end
+    endtask
+    
+    task track_test_scenario;
+        input integer test_num;
+        begin
+            if (test_num >= 1 && test_num <= 12) begin
+                coverage.test_scenario_covered[test_num] = 1;
+            end
+        end
+    endtask
+    
+    function void print_coverage_report;
+        integer total_alu_ops, covered_alu_ops;
+        integer total_modes, covered_modes;
+        integer total_b_sources, covered_b_sources;
+        integer total_carry_ins, covered_carry_ins;
+        integer total_registers, covered_registers;
+        integer total_tests, covered_tests;
+        real alu_coverage, mode_coverage, b_source_coverage;
+        real carry_coverage, reg_coverage, test_coverage;
+        begin
+            $display("\n=== COVERAGE REPORT ===");
+            
+            // ALU operations coverage
+            total_alu_ops = 16;
+            covered_alu_ops = $countones(coverage.alu_op_covered);
+            alu_coverage = (real'(covered_alu_ops) / real'(total_alu_ops)) * 100;
+            $display("ALU Operations: %0d/%0d (%0.1f%%)", covered_alu_ops, total_alu_ops, alu_coverage);
+            $display("  Covered ops: %b", coverage.alu_op_covered);
+            
+            // Mode coverage
+            total_modes = 2;
+            covered_modes = coverage.mode_covered[0] + coverage.mode_covered[1];
+            mode_coverage = (real'(covered_modes) / real'(total_modes)) * 100;
+            $display("Modes: %0d/%0d (%0.1f%%)", covered_modes, total_modes, mode_coverage);
+            
+            // B source coverage
+            total_b_sources = 2;
+            covered_b_sources = coverage.b_source_covered[0] + coverage.b_source_covered[1];
+            b_source_coverage = (real'(covered_b_sources) / real'(total_b_sources)) * 100;
+            $display("B Sources: %0d/%0d (%0.1f%%)", covered_b_sources, total_b_sources, b_source_coverage);
+            
+            // Carry in coverage
+            total_carry_ins = 2;
+            covered_carry_ins = coverage.carry_in_covered[0] + coverage.carry_in_covered[1];
+            carry_coverage = (real'(covered_carry_ins) / real'(total_carry_ins)) * 100;
+            $display("Carry Inputs: %0d/%0d (%0.1f%%)", covered_carry_ins, total_carry_ins, carry_coverage);
+            
+            // Register coverage
+            total_registers = NUM_REGS;
+            covered_registers = $countones(coverage.register_accessed);
+            reg_coverage = (real'(covered_registers) / real'(total_registers)) * 100;
+            $display("Registers: %0d/%0d (%0.1f%%)", covered_registers, total_registers, reg_coverage);
+            $display("  Accessed: %b", coverage.register_accessed);
+            
+            // Test scenario coverage
+            total_tests = 12;
+            covered_tests = $countones(coverage.test_scenario_covered);
+            test_coverage = (real'(covered_tests) / real'(total_tests)) * 100;
+            $display("Test Scenarios: %0d/%0d (%0.1f%%)", covered_tests, total_tests, test_coverage);
+            $display("  Completed: %b", coverage.test_scenario_covered);
+            
+            // Overall coverage
+            $display("=== OVERALL COVERAGE SUMMARY ===");
+            $display("Functional Coverage: %0.1f%%", 
+                    (alu_coverage + mode_coverage + b_source_coverage + 
+                     carry_coverage + reg_coverage + test_coverage) / 6.0);
+        end
+    endfunction
+    
+    // Initialize coverage
+    task initialize_coverage;
+        begin
+            coverage.alu_op_covered = 0;
+            coverage.mode_covered[0] = 0;
+            coverage.mode_covered[1] = 0;
+            coverage.b_source_covered[0] = 0;
+            coverage.b_source_covered[1] = 0;
+            coverage.carry_in_covered[0] = 0;
+            coverage.carry_in_covered[1] = 0;
+            coverage.register_accessed = 0;
+            coverage.test_scenario_covered = 0;
+        end
+    endtask
+    // ==================== END COVERAGE TRACKING ====================
+    
     // Waveform dump
     initial begin
         $dumpfile("cpu_test.vcd");
@@ -72,7 +190,7 @@ module test_cpu_top;
     event test_start, test_complete;
     event test1_done, test2_done, test3_done, test4_done, test5_done;
     event test6_done, test7_done, test8_done, test9_done, test10_done;
-    event test11_done, test12_done; // Добавлены новые события для логических тестов
+    event test11_done, test12_done;
 
     task read_register_s;
         input [ADDR_WIDTH-1:0] reg_addr;
@@ -86,6 +204,11 @@ module test_cpu_top;
             // Получаем значение
             reg_value = reg_read_data1;
             $display("Time %t: READ REG %s = %h", $time, get_reg_name(reg_addr), reg_value);
+            
+            // Track register access
+            if (reg_addr < NUM_REGS) begin
+                coverage.register_accessed[reg_addr] = 1;
+            end
         end
     endtask
 
@@ -99,6 +222,11 @@ module test_cpu_top;
             @(posedge clk);
             #1;
             reg_value = reg_read_data1;
+            
+            // Track register access
+            if (reg_addr < NUM_REGS) begin
+                coverage.register_accessed[reg_addr] = 1;
+            end
         end
     endtask
 
@@ -113,10 +241,15 @@ module test_cpu_top;
             #1;
             reg_write_enable = 0;
             $display("Time %t: Write %h to %s", $time, data, get_reg_name(addr));
+            
+            // Track register access
+            if (addr < NUM_REGS) begin
+                coverage.register_accessed[addr] = 1;
+            end
         end
     endtask
 
-
+    // Новая версия execute_alu_operation, совместимая с макросами из params.vh
     task execute_alu_operation;
         input [ADDR_WIDTH-1:0] src_reg1;    // Операнд A (всегда из регистра)
         input [ADDR_WIDTH-1:0] src_reg2;    // Операнд B (если выбран регистр)
@@ -141,12 +274,17 @@ module test_cpu_top;
             b_source_sel = b_sel;
             alu_b_imm = b_value;
             
+            // Track coverage
+            track_alu_operation(`GET_ALU_OP(operation), `GET_ALU_MODE(operation), 
+                               b_sel, carry_in, dst_reg);
+            
             // Ждем такт для стабилизации сигналов
             @(posedge clk);
+            #1;
         
             // Сохраняем результат в регистр-приемник
             write_register(dst_reg, alu_result);
-        begin
+            
             // Вывод результатов
             string b_source_info = b_sel ? 
                 $sformatf("IMM=%h", b_value) : 
@@ -162,46 +300,8 @@ module test_cpu_top;
                     (alu_cout ? "YES" : "NO"),
                     get_reg_name(dst_reg));
         end
-        end
     endtask
     
-    task check_result_simple;
-        input [ADDR_WIDTH-1:0] reg_addr;
-        input [DATA_WIDTH-1:0] expected_value;
-        input expected_cout;
-        input check_cout_enable;
-        input string test_name;
-        
-        reg [DATA_WIDTH-1:0] actual_value;
-        begin
-            // Читаем значение из регистра
-            read_register(reg_addr, actual_value);
-            
-            // Проверяем основное значение
-            if (actual_value !== expected_value) begin
-                $display("Time %t: ✗ VALUE FAIL %s: %s = %h (expected %h)", 
-                        $time, test_name, get_reg_name(reg_addr), actual_value, expected_value);
-                $display("Time %t: ✗ TEST FAILED: %s", $time, test_name);
-                $finish;
-            end
-            
-            // Проверяем Cout, если включено
-            if (check_cout_enable && alu_cout !== expected_cout) begin
-                $display("Time %t: ✗ COUT FAIL %s: Cout = %s (expected %s)", 
-                        $time, test_name,
-                        (alu_cout ? "YES" : "NO"),
-                        (expected_cout ? "YES" : "NO"));
-                $display("Time %t: ✗ TEST FAILED: %s", $time, test_name);
-                $finish;
-            end
-            
-            // Вывод успеха
-            $display("Time %t: ✓ PASS %s: %s = %h%s", 
-                    $time, test_name, get_reg_name(reg_addr), actual_value,
-                    check_cout_enable ? $sformatf(", Cout = %s", (alu_cout ? "YES" : "NO")) : "");
-        end
-    endtask
-
     task check_result;
         input [ADDR_WIDTH-1:0] reg_addr;
         input [DATA_WIDTH-1:0] expected_value;
@@ -264,21 +364,335 @@ module test_cpu_top;
                         (alu_ngo ? "YES" : "NO"));
                 check_alu_flags = 1;
             end else begin
-                $display("Time %t: ✗ FAIL %s: Flags Cout=%s (exp=%s), NBO=%s (exp=%s), NGO=%s (exp=%s)", 
-                        $time, test_name,
-                        (alu_cout ? "YES" : "NO"), (expected_cout ? "YES" : "NO"),
-                        (alu_nbo ? "YES" : "NO"), (expected_nbo ? "YES" : "NO"),
-                        (alu_ngo ? "YES" : "NO"), (expected_ngo ? "YES" : "NO"));
+                $display("Time %t: ✗ FLAGS FAIL %s:", $time, test_name);
+                $display("  Expected: Cout=%s, NBO=%s, NGO=%s",
+                        (expected_cout ? "YES" : "NO"),
+                        (expected_nbo ? "YES" : "NO"), 
+                        (expected_ngo ? "YES" : "NO"));
+                $display("  Actual:   Cout=%s, NBO=%s, NGO=%s",
+                        (alu_cout ? "YES" : "NO"),
+                        (alu_nbo ? "YES" : "NO"), 
+                        (alu_ngo ? "YES" : "NO"));
                 check_alu_flags = 0;
             end
         end
     endfunction
 
-    // Основной тестовый процесс - координатор
+    function string get_reg_name;
+        input [ADDR_WIDTH-1:0] addr;
+        begin
+            case(addr)
+                0: get_reg_name = "R0";
+                1: get_reg_name = "R1";
+                2: get_reg_name = "R2";
+                3: get_reg_name = "R3";
+                4: get_reg_name = "R4";
+                5: get_reg_name = "R5";
+                6: get_reg_name = "R6";
+                7: get_reg_name = "R7";
+                default: get_reg_name = $sformatf("R%0d", addr);
+            endcase
+        end
+    endfunction
+
+    // Тест 1: Сброс и начальная инициализация
+    task test_reset;
+        begin
+            $display("\n=== Starting Test 1: Reset ===");
+            track_test_scenario(1);
+            
+            // Применяем сброс
+            reset = 1;
+            @(posedge clk);
+            #1;
+            reset = 0;
+            
+            // Проверяем, что регистры сброшены в 0
+            for (int i = 0; i < NUM_REGS; i++) begin
+                reg_read_addr1 = i;
+                @(posedge clk);
+                #1;
+                if (reg_read_data1 !== 0) begin
+                    $display("Time %t: ✗ RESET FAIL: %s = %h (expected 0)", 
+                            $time, get_reg_name(i), reg_read_data1);
+                    $finish;
+                end
+            end
+            
+            $display("Time %t: ✓ All registers reset to 0", $time);
+            -> test1_done;
+        end
+    endtask
+
+    // Тест 2: Запись и чтение регистров
+    task test_register_rw;
+        begin
+            $display("\n=== Starting Test 2: Register Read/Write ===");
+            track_test_scenario(2);
+            
+            // Записываем тестовые значения в регистры
+            write_register(REG_R1, 16'h1234);
+            write_register(REG_R2, 16'h5678);
+            write_register(REG_R3, 16'h9ABC);
+            
+            // Читаем и проверяем значения
+            `CHECK(REG_R1, 16'h1234, "Register Write R1");
+            `CHECK(REG_R2, 16'h5678, "Register Write R2");
+            `CHECK(REG_R3, 16'h9ABC, "Register Write R3");
+            
+            // Проверяем, что другие регистры остались 0
+            `CHECK(REG_R4, 16'h0000, "Register R4 unchanged");
+            `CHECK(REG_R5, 16'h0000, "Register R5 unchanged");
+            
+            -> test2_done;
+        end
+    endtask
+
+    // Тест 3: Простое сложение
+    task test_simple_add;
+        begin
+            $display("\n=== Starting Test 3: Simple Addition ===");
+            track_test_scenario(3);
+            
+            // Подготавливаем операнды
+            write_register(REG_R1, 16'h0005);
+            write_register(REG_R2, 16'h0003);
+            
+            // Выполняем сложение: R3 = R1 + R2
+            `ALU_REG(REG_R1, REG_R2, 
+                    REG_R3, 
+                    OP_A_PLUS_B, 
+                    CARRY_IN_DISABLED, 
+                    "ADD");
+            
+            // Проверяем результат
+            `CHECK_COUT(REG_R3, 16'h0008, CARRY_OUT_DISABLED, "Simple Addition");
+            
+            -> test3_done;
+        end
+    endtask
+
+    // Тест 4: Сложение с переносом
+    task test_add_with_carry;
+        begin
+            $display("\n=== Starting Test 4: Addition with Carry ===");
+            track_test_scenario(4);
+            
+            // Подготавливаем операнды
+            write_register(REG_R1, 16'h0005);
+            write_register(REG_R2, 16'h0003);
+            
+            // Выполняем сложение с переносом: R3 = R1 + R2 + Cin
+            `ALU_REG(REG_R1, REG_R2, 
+                    REG_R3, 
+                    OP_A_PLUS_B_PLUS_CARRY, 
+                    CARRY_IN_ENABLED, 
+                    "ADD with Carry");
+            
+            // Проверяем результат
+            `CHECK_COUT(REG_R3, 16'h0009, CARRY_OUT_DISABLED, "Addition with Carry");
+            
+            -> test4_done;
+        end
+    endtask
+
+    // Тест 5: Сложение с переполнением
+    task test_add_overflow;
+        begin
+            $display("\n=== Starting Test 5: Addition with Overflow ===");
+            track_test_scenario(5);
+            
+            // Подготавливаем операнды для переполнения
+            write_register(REG_R1, 16'hFFFF);
+            write_register(REG_R2, 16'h0001);
+            
+            // Выполняем сложение: R3 = R1 + R2
+            `ALU_REG(REG_R1, REG_R2, 
+                    REG_R3, 
+                    OP_A_PLUS_B, 
+                    CARRY_IN_DISABLED, 
+                    "ADD Overflow");
+            
+            // Проверяем результат и перенос
+            `CHECK_COUT(REG_R3, 16'h0000, CARRY_OUT_ENABLED, "Addition with Overflow");
+            
+            -> test5_done;
+        end
+    endtask
+
+    // Тест 6: Вычитание
+    task test_subtract;
+        begin
+            $display("\n=== Starting Test 6: Subtraction ===");
+            track_test_scenario(6);
+            
+            // Подготавливаем операнды
+            write_register(REG_R1, 16'h0008);
+            write_register(REG_R2, 16'h0003);
+            
+            // Выполняем вычитание: R3 = R1 - R2
+            `ALU_REG(REG_R1, REG_R2, 
+                    REG_R3, 
+                    OP_A_MINUS_B_MINUS_CARRY, 
+                    CARRY_IN_ENABLED, // Для вычитания нужен Cin=0
+                    "SUB");
+            
+            // Проверяем результат
+            `CHECK_COUT(REG_R3, 16'h0005, CARRY_OUT_ENABLED, "Subtraction");
+            
+            -> test6_done;
+        end
+    endtask
+
+    // Тест 7: Вычитание с заёмом
+    task test_subtract_with_borrow;
+        begin
+            $display("\n=== Starting Test 7: Subtraction with Borrow ===");
+            track_test_scenario(7);
+            
+            // Подготавливаем операнды
+            write_register(REG_R1, 16'h0008);
+            write_register(REG_R2, 16'h0003);
+            
+            // Выполняем вычитание с заёмом: R3 = R1 - R2 - ~Cin
+            `ALU_REG(REG_R1, REG_R2, 
+                    REG_R3, 
+                    OP_A_MINUS_B_MINUS_CARRY, 
+                    CARRY_IN_DISABLED, // Cin=1 для вычитания с заёмом
+                    "SUB with Borrow");
+            
+            // Проверяем результат
+            `CHECK_COUT(REG_R3, 16'h0004, CARRY_OUT_ENABLED, "Subtraction with Borrow");
+            
+            -> test7_done;
+        end
+    endtask
+
+    // Тест 8: Инкремент
+    task test_increment;
+        begin
+            $display("\n=== Starting Test 8: Increment ===");
+            track_test_scenario(8);
+            
+            // Подготавливаем операнд
+            write_register(REG_R1, 16'h0005);
+            
+            // Выполняем инкремент: R2 = R1 + 1
+            `ALU_IMM(REG_R1, 
+                    REG_R2, 
+                    OP_A_PLUS_B, 
+                    CARRY_IN_DISABLED, 
+                    16'h0001, 
+                    "INC");
+            
+            // Проверяем результат
+            `CHECK_COUT(REG_R2, 16'h0006, CARRY_OUT_DISABLED, "Increment");
+            
+            -> test8_done;
+        end
+    endtask
+
+    // Тест 9: Декремент
+    task test_decrement;
+        begin
+            $display("\n=== Starting Test 9: Decrement ===");
+            track_test_scenario(9);
+            
+            // Подготавливаем операнд
+            write_register(REG_R1, 16'h0005);
+            
+            // Выполняем декремент: R2 = R1 - 1
+            `ALU_IMM(REG_R1, 
+                    REG_R2, 
+                    OP_A_MINUS_B_MINUS_CARRY, 
+                    CARRY_IN_ENABLED, 
+                    16'h0001, 
+                    "DEC");
+            
+            // Проверяем результат
+            `CHECK_COUT(REG_R2, 16'h0004, CARRY_OUT_ENABLED, "Decrement");
+            
+            -> test9_done;
+        end
+    endtask
+
+    // Тест 10: Побитовое И
+    task test_and;
+        begin
+            $display("\n=== Starting Test 10: Bitwise AND ===");
+            track_test_scenario(10);
+            
+            // Подготавливаем операнды
+            write_register(REG_R1, 16'hF0F0);
+            write_register(REG_R2, 16'h0F0F);
+            
+            // Выполняем AND: R3 = R1 & R2
+            `ALU_REG(REG_R1, REG_R2, 
+                    REG_R3, 
+                    OP_A_AND_B, 
+                    CARRY_IN_DISABLED, 
+                    "AND");
+            
+            // Проверяем результат
+            `CHECK(REG_R3, 16'h0000, "Bitwise AND");
+            
+            -> test10_done;
+        end
+    endtask
+
+    // Тест 11: Побитовое ИЛИ
+    task test_or;
+        begin
+            $display("\n=== Starting Test 11: Bitwise OR ===");
+            track_test_scenario(11);
+            
+            // Подготавливаем операнды
+            write_register(REG_R1, 16'hF0F0);
+            write_register(REG_R2, 16'h0F0F);
+            
+            // Выполняем OR: R3 = R1 | R2
+            `ALU_REG(REG_R1, REG_R2, 
+                    REG_R3, 
+                    OP_A_OR_B, 
+                    CARRY_IN_DISABLED, 
+                    "OR");
+            
+            // Проверяем результат
+            `CHECK(REG_R3, 16'hFFFF, "Bitwise OR");
+            
+            -> test11_done;
+        end
+    endtask
+
+    // Тест 12: Побитовое XOR
+    task test_xor;
+        begin
+            $display("\n=== Starting Test 12: Bitwise XOR ===");
+            track_test_scenario(12);
+            
+            // Подготавливаем операнды
+            write_register(REG_R1, 16'hF0F0);
+            write_register(REG_R2, 16'h0F0F);
+            
+            // Выполняем XOR: R3 = R1 ^ R2
+            `ALU_REG(REG_R1, REG_R2, 
+                    REG_R3, 
+                    OP_XOR, 
+                    CARRY_IN_DISABLED, 
+                    "XOR");
+            
+            // Проверяем результат
+            `CHECK(REG_R3, 16'hFFFF, "Bitwise XOR");
+            
+            -> test12_done;
+        end
+    endtask
+
+    // Основной тестовый процесс
     initial begin
         // Инициализация
         clk = 0;
-        reset = 1;
+        reset = 0;
         reg_write_enable = 0;
         reg_read_addr1 = 0;
         reg_read_addr2 = 0;
@@ -290,479 +704,35 @@ module test_cpu_top;
         alu_comm = 0;
         alu_b_imm = 0;
         
-        $display("=== Starting CPU Top Level Test ===");
-        $display("Data Width: %d bits, Registers: %d", DATA_WIDTH, NUM_REGS);
+        // Инициализация coverage
+        initialize_coverage();
         
-        // Сброс
-        #10 reset = 0;
+        // Ждем немного перед началом тестов
         #10;
         
-        // Запуск тестов по порядку
-        -> test_start;
+        // Запускаем тесты последовательно
+        test_reset();
+        test_register_rw();
+        test_simple_add();
+        test_add_with_carry();
+        test_add_overflow();
+        test_subtract();
+        test_subtract_with_borrow();
+        test_increment();
+        test_decrement();
+        test_and();
+        test_or();
+        test_xor();
         
-        // Ожидание завершения всех тестов
-        @(test1_done);
+        // Ждем завершения всех тестов
+        wait(test12_done.triggered);
         
-        $display("\n=== ALL TESTS PASSED! ===");
-        #50 $finish;
-    end
-    
-    // Тест 1: Инициализация регистров для логических операций
-    initial begin
-        @(test_start);
-        $display("\n=== Register Initialization for Logic Tests ===");
+        // Печатаем отчет о покрытии
+        print_coverage_report();
         
-        write_register(REG_R0, TEST_ZERO);   // Test ZERO`s pattern
-        write_register(REG_R1, TEST_VAL_1);  // Test pattern 1
-        write_register(REG_R2, TEST_VAL_2);  // Test pattern 2  
-        write_register(REG_R3, TEST_MASK_ONES_LOW);  // Mask for AND
-        write_register(REG_R4, TEST_MASK_ONES_HIGH);  // Mask for OR
-        write_register(REG_R5, TEST_MASK_CHESS_EVENS);  // Pattern for XOR
-        write_register(REG_R6, TEST_MASK_CHESS_ODDS );  // Pattern for complement
-
-        $display("\n=== Test 1: Logic operations ===");
-        $display("\n=== Test 1.1: AND Operations (mode=Logic) ===");
-
-        // AND с immediate значением
-        `ALU_IMM(REG_R3,               // Операнд А
-                 REG_R7,               // Результат
-                 OP_A_AND_B,           // Команда
-                 CARRY_IN_ENABLED,     // Carry_in = 1
-                 TEST_VAL_2,
-                 "AND Immediate");
-
-        `CHECK( REG_R7,                             // Проверяемый регистр
-                (TEST_VAL_2 & TEST_MASK_ONES_LOW),  // Ожидаемое значение
-                "AND Immediate Test");              // Вывод для отладки.
-        
-        // AND с регистром
-        `ALU_REG(REG_R3, REG_R2,                   // Операнды
-                 REG_R7,                           // Результат
-                 OP_A_AND_B,                       // Команда
-                 CARRY_IN_DISABLED,                // Carry_in - 0
-                 "AND Register");                
-
-        `CHECK(REG_R7, 
-              (TEST_VAL_2 & TEST_MASK_ONES_LOW),
-              "AND Register Test");
-
-        // AND с полной маской
-        `ALU_IMM(REG_R3, 
-                 REG_R7,
-                 OP_L_A_AND_B, 
-                 CARRY_IN_ENABLED, 
-                 TEST_ONES, 
-                 "AND Full Mask");
-
-        `CHECK(REG_R7, 
-               TEST_MASK_ONES_LOW & TEST_ONES, 
-               "AND Full Mask Test");
-        
-        // AND с нулевой маской
-        `ALU_REG(REG_R3, REG_R5, 
-                 REG_R7, 
-                 OP_A_AND_B, 
-                 CARRY_IN_DISABLED, 
-                 "AND Zero Mask");
-
-        `CHECK( REG_R7, 
-                (TEST_MASK_CHESS_EVENS & TEST_MASK_ONES_LOW), 
-                "AND Zero Mask Test");
-
-        $display("\n=== Test 1.2: OR Operations (mode=Logic) ===");
-            
-        // OR с immediate значением
-        `ALU_IMM(REG_R1,  
-                 REG_R7,
-                 OP_A_OR_B,
-                 CARRY_IN_DISABLED, 
-                 TEST_MASK_ONES_HIGH,
-                 "OR Immediate FF00");
-
-        `CHECK( REG_R7, 
-                TEST_VAL_1| TEST_MASK_ONES_HIGH, 
-                "OR Immediate Test");
-        
-        // OR с регистром
-        `ALU_REG(REG_R1, REG_R4,
-                 REG_R7, 
-                 OP_A_OR_B, 
-                 CARRY_IN_ENABLED, 
-                 "OR Register");
-
-        `CHECK( REG_R7, 
-                TEST_VAL_1 | TEST_MASK_ONES_HIGH, 
-                "OR Register Test");
-        
-        // OR с нулевой маской
-        `ALU_IMM(REG_R1, REG_R7,
-                 OP_A_OR_B, 
-                 CARRY_IN_ENABLED, 
-                 TEST_ZERO, 
-                 "OR Zero Mask");
-        
-        `CHECK( REG_R7, 
-                TEST_VAL_1, 
-                "OR Zero Mask Test");
-        
-        // OR с полной маской
-        `ALU_IMM(REG_R0,REG_R7,
-                 OP_A_OR_B, 
-                 CARRY_IN_ENABLED, 
-                 TEST_ONES, 
-                 "OR Full Mask");
-        `CHECK_COUT(REG_R7, 
-                    TEST_ONES, 
-                    CARRY_OUT_ENABLED, 
-                    "OR Full Mask Test");
-   
-        $display("\n=== Test 1.3: Other Logic Operations ===");
-        
-        // XOR операция
-        `ALU_IMM(REG_R5, REG_R7,            
-                 OP_XOR, 
-                 CARRY_IN_ENABLED, 
-                 TEST_MASK_CHESS_ODDS, 
-                 "XOR with 5555");
-        `CHECK(REG_R7, TEST_MASK_CHESS_EVENS ^ TEST_MASK_CHESS_ODDS, "XOR Test");
-        
-        // NOT операция (XOR с FFFF)
-        `ALU_IMM(REG_R7, REG_R7,  
-                 OP_XOR, 
-                 CARRY_IN_ENABLED, 
-                 TEST_ONES, 
-                 "NOT (XOR with FFFF)");
-        `CHECK( REG_R7,
-                ~TEST_ONES, 
-                "NOT Test");
-
-        
-        $display("\n=== Test 1.4: Carry in Logic Operations ===");
-
-        // Проверка что переносы не влияют на логические операции
-        `ALU_IMM( REG_R1,REG_R7,
-                    OP_A_AND_B, 
-                    CARRY_IN_DISABLED, 
-                    TEST_MASK_ONES_LOW, 
-                    "AND with Cin=1");
-
-        `CHECK_COUT(REG_R7, 
-                    TEST_VAL_1 & TEST_MASK_ONES_LOW,
-                    0,
-                    "AND with Carry Test");
-
-        // if (alu_cout !== 1'b0) begin
-        //     $display("ERROR: Carry should not be set in logic mode");
-        //     $finish;
-        // end
-        // $display("PASS: Carry correctly not set in logic mode");
-
-        -> test1_done;
-    end
-/*
-    // Тест 2: Арифметические операции
-    initial begin
-        @(test1_done);
-        $display("\n=== Register Initialization for Arithmetic Tests ===");
-        
-        write_register(REG_R0, TEST_ZERO);
-        write_register(REG_R1, TEST_ONE_VAL);
-        write_register(REG_R2, TEST_VAL_1);
-        write_register(REG_R3, TEST_VAL_2);
-        write_register(REG_R4, 16'h9ABC);
-        
-        reg_read_addr1 = REG_R2; // A = 1234
-        reg_read_addr2 = REG_R3; // B = 5678
-        
-        $display("Reg2 = %h, Reg3 = %h", reg_read_data1, reg_read_data2);
-        $display("\n=== Test 2: Arithmetic Operations (mode=Math) ===");
-        
-        // Сложение
-        execute_alu_operation(  4'b1001, 
-                                ALU_MODE_ARITHMETIC, 
-                                CARRY_IN_DISABLED, 
-                                B_SOURCE_REGISTER, 
-                                INDIFFERENT_VAL, 
-                                "ADD without carry"); // Cin=1 -> без переноса
-        check_result(16'h68ac, "Addition without carry");
-        
-        execute_alu_operation(  4'b1001, 
-                                ALU_MODE_ARITHMETIC, 
-                                CARRY_IN_ENABLED, 
-                                B_SOURCE_REGISTER, 
-                                INDIFFERENT_VAL, 
-                                "ADD with carry"); // Cin=0 -> с переносом
-        
-        check_result(16'h68ad, "Addition with carry");
-        
-        // Проверим другие простые сложения
-        write_register(REG_R7, 16'h0001);
-        reg_read_addr1 = REG_R7; // A = 0001
-        reg_read_addr2 = REG_R7; // B = 0001
-        
-        execute_alu_operation(  4'b1001, 
-                                ALU_MODE_ARITHMETIC, 
-                                CARRY_IN_DISABLED, 
-                                B_SOURCE_REGISTER,
-                                INDIFFERENT_VAL, 
-                                "1 + 1 without carry");
-        check_result(16'h0002, "1 + 1 without carry");
-        
-        execute_alu_operation(  4'b1001, 
-                                ALU_MODE_ARITHMETIC, 
-                                CARRY_IN_ENABLED, 
-                                B_SOURCE_REGISTER, 
-                                INDIFFERENT_VAL, 
-                                "1 + 1 with carry");
-        check_result(16'h0003, "1 + 1 with carry");
-        
-        // Вычитание - С заемом (borrow) - нужен перенос!
-        reg_read_addr1 = REG_R2; // A = 1234
-        reg_read_addr2 = REG_R3; // B = 5678
-        execute_alu_operation(  4'b0110, 
-                                ALU_MODE_ARITHMETIC, 
-                                CARRY_IN_ENABLED,
-                                B_SOURCE_REGISTER, 
-                                INDIFFERENT_VAL, 
-                                "SUB with borrow"); // Cin=0 -> с переносом
-        check_result(16'h1234 - 16'h5678, "Subtraction Test");
-
-        execute_alu_operation(  4'b0110, 
-                                ALU_MODE_ARITHMETIC, 
-                                CARRY_IN_DISABLED, 
-                                B_SOURCE_REGISTER, 
-                                INDIFFERENT_VAL, 
-                                "SUB without borrow"); // Cin=1 -> без переноса
-        check_result((16'h1234 - 16'h5678)-1, "Subtraction Test");
-
-        // Сложение с immediate значением - без переноса
-        execute_alu_operation(  4'b1001, 
-                                ALU_MODE_ARITHMETIC, 
-                                CARRY_IN_DISABLED,
-                                B_SOURCE_IMMEDIATE, 
-                                16'h0005, "ADD immediate without carry");
-        check_result(16'h1239, "Addition Immediate Test");
-        
-        // Сложение с immediate значением - с переносом
-        execute_alu_operation(  4'b1001, 
-                                ALU_MODE_ARITHMETIC, 
-                                CARRY_IN_ENABLED, 
-                                B_SOURCE_IMMEDIATE, 
-                                16'h0005, "ADD immediate without carry");
-        check_result(16'h1239+1'b1, "Addition Immediate Test");
-
-        -> test2_done;
-    end
-    
-    // Тест 3: Сравнение режимов (оригинальный тест 4)
-    initial begin
-        @(test2_done);
-        $display("\n=== Test 3: Mode Comparison ===");
-        
-        write_register(REG_R2, TEST_VAL_1);
-        write_register(REG_R5, TEST_MASK_LOW_ONES);
-
-        reg_read_addr1 = REG_R2; // A = 1234
-        reg_read_addr2 = REG_R5; // B = 00FF
-
-        // Арифметическое И (mode=0) с переносом
-        execute_alu_operation(4'b1011, 0, 0, 1, 16'h00FF, "Arithmetic 'AB - 1'");
-        check_result(16'h1234 & 16'h00FF, "Logical AND Test");
-
-        // Арифметическое И (mode=0) без переноса
-        execute_alu_operation(4'b1011, 0, 3, 1, 16'h00FF, "Arithmetic 'AB - 1'");
-        check_result((16'h1234 & 16'h00FF)-1, "Logical AND Test");
-        
-        // В логических инструкциях переносы не учитываются
-        // Логическое И (mode=1) с переносом
-        execute_alu_operation(4'b1011, 1, 0, 1, 16'h00FF, "Logical AND");
-        check_result(16'h1234 & 16'h00FF, "Logical AND Test");
-        
-        // Логическое ИЛИ без переноса
-        execute_alu_operation(4'b1011, 1, 1, 1, 16'h00FF, "Logical AND");
-        check_result(16'h1234 & 16'h00FF, "Logical AND Test");
-
-        // Логическое ИЛИ-НЕ без переноса
-        execute_alu_operation(4'b0100, 1, 0, 1, 16'h00FF, "Logical AND");
-        check_result(~(16'h1234 & 16'h00FF), "Logical AND Test");
-        
-        // Логическое ИЛИ-НЕ без переноса
-        execute_alu_operation(4'b0100, 1, 1, 1, 16'h00FF, "Logical AND");
-        check_result(~(16'h1234 & 16'h00FF), "Logical AND Test");
-
-        -> test3_done;
+        $display("\n=== ALL TESTS COMPLETED SUCCESSFULLY! ===");
+        $display("Time %t: Simulation finished", $time);
+        $finish;
     end
 
-    // Тест 4: Операции с переносами
-    initial begin
-        @(test3_done);
-    
-        $display("\n=== Test 4: Carry Operations ===");
-        
-        write_register(REG_R5, TEST_ONES);
-        reg_read_addr1 = REG_R5; // A = FFFF
-        
-        // Инкремент: FFFF + 1 = 0000 (без дополнительного +1 от Cin)
-        execute_alu_operation(4'b1001, 0, 1, 1, 16'h0001, "INCREMENT"); // Cin=1 -> без переноса
-        check_result(16'h0000, "Increment FFFF");
-        if (alu_cout) begin
-            $display("ERROR: Carry out expected");
-            $finish;
-        end
-        $display("PASS: Carry out detected");
-
-        // Инкремент: FFFF + 1 = 0000 (с дополнительным +1 от Cin)
-        execute_alu_operation(4'b1001, 0, 0, 1, 16'h0001, "INCREMENT"); // Cin=1 -> без переноса
-        check_result(16'h0001, "Increment FFFF");
-        if (alu_cout) begin
-            $display("ERROR: Carry out expected");
-            $finish;
-        end
-
-        -> test4_done;
-    end
-
-    // Тест 5: Декремент
-    initial begin
-        @(test4_done);
-        $display("\n=== Test 5: Decrement Operation ===");
-        
-        write_register(6, 16'h0000);
-        reg_read_addr1 = 6; // A = 0000
-        
-        // Декремент: 0000 - 1 = FFFF
-        // Используем операцию вычитания 4'b0110 с immediate значением 1
-        // Для вычитания: Cin=0 -> с переносом (A - B)
-        execute_alu_operation(4'b0110, 0, 0, 1, 16'h0001, "DECREMENT");
-        check_result(16'hFFFF, "Decrement Zero");
-        
-        -> test5_done;
-    end
-    
-    // Тест 6: Сдвиг/удвоение - диагностика
-    initial begin
-        @(test5_done);
-        $display("\n=== Test 6: Shift/Double Operation Diagnostics ===");
-        
-        write_register(6, 16'h0013);
-        write_register(7, 16'h0007);
-        
-        reg_read_addr1 = 7;     // A = 0007
-        reg_read_addr2 = 6;     // B = 0013
-
-        $display("Testing command 4'b1100 in different modes:");
-        
-        // Логический режим (M=1) - должно быть 1
-        execute_alu_operation(4'b1100, 1, 0, 1, 16'h0000, "4'b1100 Logic mode");
-        check_result(16'hFFFF, "Logic mode: 1");            // 1
-        
-        // Арифметический режим (M=0) - должно быть 2A
-        execute_alu_operation(4'b1100, 0, 1, 1, 16'h0000, "4'b1100 Math mode");
-        check_result(16'h000E, "Math mode: A+A = 2A"); // (7+0)+7 = E (14)
-        
-        // Проверим другие команды для сдвига
-        execute_alu_operation(4'b1111, 1, 0, 1, 0, "4'b1111 Logic mode");
-        check_result(16'h0007, "Logic mode: = A"); // (7+0)+7 = E (14)
-        
-        execute_alu_operation(4'b1010, 1, 1, 0, reg_read_addr2, "4'b1010 Logic mode");
-        check_result(16'h0013, "Logic mode: = B"); // (7+0)+7 = E (14)
-
-        //$display("4'b1010 Logic result: %h (need to check table)", alu_result);
-        
-        // Правильный способ удвоения через сложение
-        //execute_alu_operation(4'b1001, 0, 1, 1, 16'h0007, "Double via A + A");
-        //check_result(16'h000E, "7 + 7 = E (14)");
-        
-        -> test6_done;
-    end
-    
-    // Тест 7: Комплексная операция - проверка команды 4'b1100
-    initial begin
-        @(test6_done);
-        
-        $display("\n=== Test 7: Complex Operation ===");
-        
-        write_register(6, 16'h0005);
-        write_register(7, 16'h0003);
-        
-        reg_read_addr1 = 6; // A = 5
-        reg_read_addr2 = 7; // B = 3
-        
-        // (A + B) - обычное сложение
-        execute_alu_operation(4'b1001, 0, 0, 0, 0, "A + B");
-        write_register(6, alu_result); // 5 + 3 + 1 = 9 (т.к. Cin=0 добавляет +1)
-        
-        // Проверка команды 4'b1100 в двух режимах:
-        reg_read_addr1 = 6; // A = 9
-        
-        // Режим 1: Cin=0 -> A + A + 1
-        execute_alu_operation(4'b1100, 0, 0, 1, 0, "A + A + 1 (Cin=0)");
-        check_result(16'h0013, "A + A + 1 Test"); // 9 + 9 + 1 = 19 (0013)
-        
-        // Режим 2: Cin=1 -> A + A  
-        execute_alu_operation(4'b1100, 0, 1, 1, 0, "A + A (Cin=1)");
-        check_result(16'h0012, "A + A Test"); // 9 + 9 = 18 (0012)
-        
-        // Для оригинального теста используем A + A (удвоение)
-        check_result(16'h0012, "Complex Operation Test");
-
-        -> test7_done;
-    end
-*/
 endmodule
-
-
-/*
-    // Тест 7: Операция удвоения (A + A) - разными методами
-    initial begin
-        @(test6_done);
-        $display("\n=== Test 7: Doubling Operation ===");
-        
-        // Тестируем удвоение разными командами
-        write_register(1, 16'h0005);
-        write_register(2, 16'h0009);
-        
-        $display("Testing various doubling methods:");
-        
-        // Метод 1: Через сложение A + A (команда 4'b1001)
-        reg_read_addr1 = 1; // A = 5
-        execute_alu_operation(4'b1001, 0, 1, 1, 16'h0005, "A + A via ADD"); // Cin=1 -> без переноса
-        check_result(16'h000A, "5 + 5 = A");
-        
-        // Метод 2: Через команду 4'b1100 - (A + B) + A с B=0
-        reg_read_addr1 = 1; // A = 5
-        execute_alu_operation(4'b1100, 0, 1, 1, 16'h0000, "(A+0)+A via 4'b1100"); // Cin=1, B=0
-        check_result(16'h000A, "(5+0)+5 = A");
-        
-        // Метод 3: Через команду 4'b1100 - (A + B) + A с B=5 (другое значение)
-        reg_read_addr1 = 2; // A = 9
-        execute_alu_operation(4'b1100, 0, 1, 1, 16'h0005, "(A+5)+A via 4'b1100"); // Cin=1, B=5
-        check_result(16'h0017, "(9+5)+9 = 17"); // (9+5)+9 = 23 (0017)
-        
-        -> test7_done;
-    end
-    
-    // Тест 8: Комплексная операция - оригинальный тест
-    initial begin
-        @(test7_done);
-        $display("\n=== Test 8: Complex Operation ===");
-        
-        write_register(6, 16'h0005);
-        write_register(7, 16'h0003);
-        
-        reg_read_addr1 = 6; // A = 5
-        reg_read_addr2 = 7; // B = 3
-        
-        // (A + B) - через команду сложения 4'b1001
-        execute_alu_operation(4'b1001, 0, 1, 0, 0, "A + B via 4'b1001"); // Cin=1 -> без переноса
-        write_register(6, alu_result); // 5 + 3 = 8
-        
-        // Удвоение - через команду 4'b1100 с B=0: (A + 0) + A = A + A
-        reg_read_addr1 = 6; // A = 8
-        execute_alu_operation(4'b1100, 0, 1, 1, 16'h0000, "A + A via 4'b1100"); // Cin=1, B=0
-        check_result(16'h0010, "Complex Operation Test"); // (8+0)+8 = 16 (0010)
-        
-        -> test8_done;
-    end
-
-*/
