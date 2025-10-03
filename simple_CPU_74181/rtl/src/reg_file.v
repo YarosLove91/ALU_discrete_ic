@@ -44,12 +44,13 @@ module param_reg_file
             registers[write_addr] <= write_data;
         end
     end
-    
+
+`ifdef SIMULATE_INIT
     // Инициализация (для симуляции)
     initial begin
         for (i = 0; i < NUM_REGS; i = i + 1) begin
             registers[i] = {DATA_WIDTH{1'b0}};
         end
     end
-
+`endif
 endmodule
