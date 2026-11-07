@@ -14,8 +14,9 @@
 
 module alu_tb_top;
 
-import uvm_pkg::*;
-import alu_tb_pkg::*;
+    import uvm_pkg::*;
+    import alu_tb_pkg::*;
+    import alu_test_pkg::*;
 
   // ---------------- clock / reset ----------------
   logic clk = 1'b0;

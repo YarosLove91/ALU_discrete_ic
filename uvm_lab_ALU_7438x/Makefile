@@ -18,8 +18,10 @@ CXX      := g++
 DUT  ?= 74381
 TEST ?= alu_ds_test
 N    ?= 1000
-VERBOSITY    ?= UVM_MEDIUM
-SIM_PLUSARGS ?=
+VERBOSITY ?= UVM_MEDIUM
+# Additional simulation plusargs (override: make SIM_PLUSARGS="...")
+# +UVM_NO_RELNOTES suppresses the UVM release-notes banner
+SIM_PLUSARGS ?= +UVM_NO_RELNOTES
 
 NUM_THREADS := $(shell nproc 2>/dev/null || echo 4)
 MAKEFLAGS += --no-print-directory
@@ -52,20 +54,28 @@ UVM_REPO    := https://github.com/chipsalliance/uvm-verilator.git
 UVM_MARKER  := .uvm_downloaded
 UVM_DPI_SRC := $(UVM_DIR)/src/dpi/uvm_dpi.cc
 
-TB_TOP   := alu_tb_top
-TB_DIR   := tb
-ENV_DIR  := tb/env
-RFM_DIR  := tb/ref_model
-TEST_DIR := tb/tests
-OUT_DIR  := uvm_out/$(DUT)
-LOG_DIR  := logs
-LOG      := $(LOG_DIR)/$(DUT)_$(TEST).log
+TB_TOP    := alu_tb_top
+TB_DIR    := tb
+RFM_DIR   := tb/ref_model
+AGENT_DIR := tb/env/agent
+SEQ_DIR   := tb/env/sequence
+ENV_DIR   := tb/env/environment
+TEST_DIR  := tb/tests
+OUT_DIR   := uvm_out/$(DUT)
+LOG_DIR   := logs
+LOG       := $(LOG_DIR)/$(DUT)_$(TEST).log
 
-TB_SRCS  := $(TB_DIR)/alu_if.sv \
-            $(TB_DIR)/alu_tb_pkg.sv \
-            $(TB_DIR)/alu_tb_top.sv
-TB_ALL   := $(wildcard $(TB_DIR)/*.sv) $(wildcard $(ENV_DIR)/*.sv) \
-            $(wildcard $(RFM_DIR)/*.sv) $(wildcard $(TEST_DIR)/*.sv)
+# Compilation units in dependency order:
+# common pkg -> sequence pkg -> agent pkg -> env pkg -> test pkg -> top;
+# class files are `included into their packages
+TB_PKG_SRCS := $(TB_DIR)/alu_tb_pkg.sv \
+               $(SEQ_DIR)/alu_seq_pkg.sv \
+               $(AGENT_DIR)/alu_agent_pkg.sv \
+               $(ENV_DIR)/alu_env_pkg.sv \
+               $(TEST_DIR)/alu_test_pkg.sv
+TB_ALL      := $(wildcard $(TB_DIR)/*.sv) $(wildcard $(RFM_DIR)/*.sv) \
+               $(wildcard $(AGENT_DIR)/*.sv) $(wildcard $(SEQ_DIR)/*.sv) \
+               $(wildcard $(ENV_DIR)/*.sv) $(wildcard $(TEST_DIR)/*.sv)
 
 # ------------------------------------------------------------
 # Linker auto-detection: mold -> lld -> gold -> system default
@@ -106,8 +116,10 @@ VFLAGS := \
 	+define+DUT_$(DUT) \
 	+incdir+$(UVM_DIR)/src \
 	+incdir+$(TB_DIR) \
-	+incdir+$(ENV_DIR) \
 	+incdir+$(RFM_DIR) \
+	+incdir+$(AGENT_DIR) \
+	+incdir+$(SEQ_DIR) \
+	+incdir+$(ENV_DIR) \
 	+incdir+$(TEST_DIR) \
 	--top-module $(TB_TOP) \
 	--Mdir $(OUT_DIR) \
@@ -142,7 +154,7 @@ $(BIN): $(UVM_MARKER) $(TB_ALL) $(RTL_SRCS) $(firstword $(MAKEFILE_LIST))
 		$(UVM_DIR)/src/uvm_pkg.sv \
 		$(TB_DIR)/alu_if.sv \
 		$(RTL_SRCS) \
-		$(TB_DIR)/alu_tb_pkg.sv \
+		$(TB_PKG_SRCS) \
 		$(TB_DIR)/alu_tb_top.sv \
 		$(UVM_DPI_SRC) \
 		-CFLAGS "-std=c++17"
@@ -200,10 +212,11 @@ smoke:
 
 # ------------------------------------------------------------
 # Regressions
-#   test     - green suite: passes on the shipped RTL
-#   hunt     - stage-4 suite: exposes the OVR defect in alu_74382.sv
-#              (FAILs until the RTL is fixed - by design)
-#   test_all - full matrix: green after the defect is fixed
+#   test     - core suite: green regardless of the defect state
+#   hunt     - stage-4 regression: FAILs while the OVR defect is
+#              injected (docs/instructor/alu_74382_inject_ovr_bug.patch),
+#              PASSes on the fixed RTL
+#   test_all - full matrix (test + hunt + random/corner 382)
 # ------------------------------------------------------------
 test: sanity ds381 ds382 exh381 rand381 corner381 ds381_16 rand381_16 ds382_16
 	@echo ">>> REGRESSION 'test': ALL PASS"
@@ -243,9 +256,9 @@ help:
 	@echo "        alu_exhaustive_test | alu_random_test | alu_corner_test"
 	@echo ""
 	@echo "Regressions:"
-	@echo "  make test                - green suite (shipped RTL)"
-	@echo "  make hunt                - stage 4: 74382 OVR defect hunt (FAIL until fixed)"
-	@echo "  make test_all            - full matrix (PASS after the fix)"
+	@echo "  make test                - core suite (green in any defect state)"
+	@echo "  make hunt                - stage 4: OVR defect regression (FAIL while injected)"
+	@echo "  make test_all            - full matrix (PASS on the fixed RTL)"
 	@echo ""
 	@echo "Misc:"
 	@echo "  make waves DUT=... TEST=... - run with VCD dump (logs/waves.vcd)"

@@ -22,7 +22,7 @@ typedef struct packed {
 
   function automatic ds_row_t ds381_row(int sel, int in_case);
     int ab;
-    ab = in_case & 2'b11;
+    ab = in_case[1:0];
     case (sel)
       0: ds381_row = '{f: 4'h0, x1: 1'b0, x2: 1'b0};  // CLEAR: F=0, G=L, P=L
       1: case (in_case)                                // B MINUS A
@@ -85,7 +85,7 @@ typedef struct packed {
 
   function automatic ds_row_t ds382_row(int sel, int in_case);
     int ab;
-    ab = in_case & 2'b11;
+    ab = in_case[1:0];
     case (sel)
       0: ds382_row = '{f: 4'h0, x1: 1'b1, x2: 1'b1};  // CLEAR: OVR=H, Cn+4=H
       1: case (in_case)                                // B MINUS A

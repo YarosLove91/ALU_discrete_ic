@@ -3,39 +3,44 @@
 // Author  : M.YarosLove <yoruk91@gmail.com>
 // Project : UVM verification lab for 74381/74382 ALUs (Verilator)
 // ------------------------------------------------------------
-// Testbench package: DUT selection (compile-time define from
-// the Makefile), shared parameters/typedefs, verdict counters,
-// and `includes of the reference model (tb/ref_model/), UVM
-// environment classes (tb/env/) and tests (tb/tests/).
+// Common testbench package (base of the dependency chain):
+//   - DUT selection (compile-time define from the Makefile)
+//   - shared parameters, operation enum, virtual interface type
+//   - global verdict counters
+//   - golden (reference) models and datasheet truth tables
+//     (`includes from tb/ref_model/)
+// UVM classes live in the local packages:
+//   alu_agent_pkg (tb/env/agent), alu_seq_pkg (tb/env/sequence),
+//   alu_env_pkg (tb/env/environment), alu_test_pkg (tb/tests).
 // ============================================================
 `ifndef ALU_TB_PKG_SV
 `define ALU_TB_PKG_SV
 
 package alu_tb_pkg;
 
-import uvm_pkg::*;
-`include "uvm_macros.svh"
+    import uvm_pkg::*;
+    `include "uvm_macros.svh"
 
-// --------------------------------------------------------
-// DUT selection (set by the Makefile: +define+DUT_<...>)
-// --------------------------------------------------------
-typedef enum { DUT_381_4, DUT_382_4, DUT_381_16, DUT_382_16 } dut_kind_e;
+    // --------------------------------------------------------
+    // DUT selection (set by the Makefile: +define+DUT_<...>)
+    // --------------------------------------------------------
+    typedef enum { DUT_381_4, DUT_382_4, DUT_381_16, DUT_382_16 } dut_kind_e;
 
 `ifdef DUT_74381
-  localparam dut_kind_e DUT_KIND = DUT_381_4;
-  localparam int        W        = 4;
+    localparam dut_kind_e DUT_KIND = DUT_381_4;
+    localparam int        W        = 4;
 `elsif DUT_74382
-  localparam dut_kind_e DUT_KIND = DUT_382_4;
-  localparam int        W        = 4;
+    localparam dut_kind_e DUT_KIND = DUT_382_4;
+    localparam int        W        = 4;
 `elsif DUT_74381_16
-  localparam dut_kind_e DUT_KIND = DUT_381_16;
-  localparam int        W        = 16;
+    localparam dut_kind_e DUT_KIND = DUT_381_16;
+    localparam int        W        = 16;
 `elsif DUT_74382_16
-  localparam dut_kind_e DUT_KIND = DUT_382_16;
-  localparam int        W        = 16;
+    localparam dut_kind_e DUT_KIND = DUT_382_16;
+    localparam int        W        = 16;
 `else
-  localparam dut_kind_e DUT_KIND = DUT_381_4;
-  localparam int        W        = 4;
+    localparam dut_kind_e DUT_KIND = DUT_381_4;
+    localparam int        W        = 4;
 `endif
 
   localparam bit [W-1:0] ALL_ONES = {W{1'b1}};
@@ -71,54 +76,12 @@ typedef enum { DUT_381_4, DUT_382_4, DUT_381_16, DUT_382_16 } dut_kind_e;
   int unsigned g_refmodel_errors = 0;
 
   // --------------------------------------------------------
-  // Printable operation name (for logs)
+  // Golden (reference) models and datasheet truth tables
   // --------------------------------------------------------
-  function automatic string alu_op_name(bit [2:0] s);
-    case (alu_op_e'(s))
-      OP_CLEAR   : return "CLEAR ";
-      OP_B_SUB_A : return "B-A   ";
-      OP_A_SUB_B : return "A-B   ";
-      OP_ADD     : return "A+B   ";
-      OP_XOR     : return "A^B   ";
-      OP_OR      : return "A|B   ";
-      OP_AND     : return "A&B   ";
-      OP_PRESET  : return "PRESET";
-      default    : return "??????"; // TODO: Make UVM_ERROR
-    endcase
-  endfunction : alu_op_name
-
-// --------------------------------------------------------
-// Golden (reference) models and datasheet truth tables
-// --------------------------------------------------------
-`include "alu_ds_tables.sv"   // ds_row_t, ds381_row, ds382_row
-`include "golden_381.sv"      // golden_381, golden_381_w16
-`include "golden_382.sv"      // golden_382, golden_382_w16
-`include "golden_sanity.sv"   // run_golden_sanity (self-check)
-
-// --------------------------------------------------------
-// UVM environment classes
-// --------------------------------------------------------
-`include "alu_transaction.sv"
-`include "alu_sequencer.sv"
-`include "alu_driver.sv"
-`include "alu_monitor.sv"
-`include "alu_agent.sv"
-`include "alu_ref_model.sv"
-`include "alu_scoreboard.sv"
-`include "alu_coverage.sv"
-`include "alu_env.sv"
-`include "alu_seq_lib.sv"
-
-// --------------------------------------------------------
-// Tests (the base test must be included first)
-// --------------------------------------------------------
-`include "alu_base_test.sv"
-`include "alu_sanity_test.sv"
-`include "alu_ds_test.sv"
-`include "alu_exhaustive_test.sv"
-`include "alu_corner_test.sv"
-`include "alu_random_test.sv"
-`include "alu_smoke_test.sv"
+  `include "alu_ds_tables.sv"   // ds_row_t, ds381_row, ds382_row
+  `include "golden_381.sv"      // golden_381, golden_381_w16
+  `include "golden_382.sv"      // golden_382, golden_382_w16
+  `include "golden_sanity.sv"   // run_golden_sanity (self-check)
 
 endpackage : alu_tb_pkg
 

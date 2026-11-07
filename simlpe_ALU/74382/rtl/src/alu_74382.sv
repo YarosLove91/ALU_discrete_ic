@@ -20,15 +20,9 @@ localparam ALL_LOW = {OPERAND_W{1'b0}};
 logic [OPERAND_W    - 1:0] gen_carry;
 logic [OPERAND_W    - 1:0] prop_carry;
 logic [OPERAND_W    - 1:0] gen_carry_sum;
-logic [OPERAND_W    - 1:0] port_a_act_high, port_b_act_high;
 logic [OPERAND_W    - 1:0] port_a_sub, port_b_sub;
 logic [OPERAND_W    - 1:0] all_carrys;
 logic [RESULT_EXT_W - 1:0] result_ext;
-
-always_comb begin : ports_for_overflow
-    port_a_act_high = carry_in ? port_a : ~port_a;
-    port_b_act_high = carry_in ? port_b : ~port_b;
-end
 
 always_comb begin : inv_ports_for_sub
     port_a_sub = (sel == OP_A_SUB_B) ?  port_a : ~port_a;
@@ -72,38 +66,18 @@ always_comb result = result_ext[RESULT_W - 1:0];
 always_comb begin : overflow_calc
     case(sel)
         OP_B_SUB_A:
-            begin
-                if ( (-$signed(port_a_act_high)) > 0 && $signed(port_b_act_high) > 0 )
-                    overflow = ($signed(result) < 0) ? 'd1 : 'd0;
-
-                else if ( (-$signed(port_a_act_high)) < 0 && $signed(port_b_act_high) < 0 )
-                    overflow = ($signed(result) > 0) ? 'd1 : 'd0;  
-
-                else
-                    overflow = 'd0;
-            end
+            // OVR = Cn+3 ^ Cn+4 (definition from the 74F382 datasheet).
+            // Cn+3 (carry into the MSB) is recovered from the full-adder
+            // identity sum[3] = x[3] ^ y[3] ^ Cn+3, where x,y are the
+            // actual addends of result_ext.
+            overflow = result_ext[RESULT_W] ^ result_ext[RESULT_W-1] ^
+                       port_b_sub[OPERAND_W-1] ^ port_a_sub[OPERAND_W-1];
         OP_A_SUB_B:
-            begin
-                if ( $signed(port_a_act_high) > 0 && (-$signed(port_b_act_high)) > 0 )
-                    overflow = ($signed(result) < 0) ? 'd1 : 'd0;
-                
-                else if ( $signed(port_a_act_high) < 0 && (-$signed(port_b_act_high)) < 0 )
-                    overflow = ($signed(result) > 0) ? 'd1 : 'd0;                    
-                
-                else
-                    overflow = 'd0;
-            end
+            overflow = result_ext[RESULT_W] ^ result_ext[RESULT_W-1] ^
+                       port_a_sub[OPERAND_W-1] ^ port_b_sub[OPERAND_W-1];
         OP_ADD:
-            begin
-                if ( ($signed(port_a) > 0) && ($signed(port_b) > 0) )
-                    overflow = ($signed(result) < 0) ? 'd1 : 'd0;
-                
-                else if ( $signed(port_a) < 0 && $signed(port_b) < 0 )
-                    overflow = ($signed(result) > 0) ? 'd1 : 'd0;                    
-                
-                else
-                    overflow = 'd0;
-            end
+            overflow = result_ext[RESULT_W] ^ result_ext[RESULT_W-1] ^
+                       port_a[OPERAND_W-1] ^ port_b[OPERAND_W-1];
         default:
             overflow = carry_out;
     endcase // sel

@@ -53,9 +53,12 @@
       super.new(name);
     endfunction : new
 
+    // operation name comes straight from the alu_op_e enum (.name())
     function string inputs2str();
-      return $sformatf("op=%s s=%0b cn=%0b a=%0h b=%0h",
-          alu_op_name(s), s, cn, a, b);
+        alu_op_e op;
+        op = alu_op_e'(s);
+        return $sformatf("op=%-8s s=%0b cn=%0b a=%0h b=%0h",
+            op.name(), s, cn, a, b);
     endfunction : inputs2str
 
     function string outputs2str();
