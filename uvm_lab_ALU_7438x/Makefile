@@ -126,6 +126,22 @@ VFLAGS := \
 	$(if $(strip $(LDFLAGS)),-LDFLAGS "$(LDFLAGS)",)
 
 # ------------------------------------------------------------
+# Colored console verdicts (default behavior)
+#   green "TEST SUCCESFULLY PASS !" / red "TEST FAILURE !"
+#   Color is decided at recipe runtime: enabled when stdout is
+#   a terminal, auto-disabled in pipes/CI or when NO_COLOR is
+#   set (https://no-color.org).
+# ------------------------------------------------------------
+CLR_PASS := \033[1;32m
+CLR_FAIL := \033[1;31m
+CLR_OFF  := \033[0m
+
+# runtime color gate: usage $(call clr,<code>) -> assigns C/R shell vars
+define clr
+	if [ -t 1 ] && [ -z "$$NO_COLOR" ]; then C='$(1)'; R='$(CLR_OFF)'; else C=''; R=''; fi
+endef
+
+# ------------------------------------------------------------
 # Targets
 # ------------------------------------------------------------
 .PHONY: all build run smoke sanity help list clean distclean \
@@ -164,9 +180,14 @@ run: build
 	@echo ">>> [run] DUT=$(DUT) TEST=$(TEST) N=$(N)"
 	-$(BIN) +UVM_TESTNAME=$(TEST) +NUM_TRANSACTIONS=$(N) \
 		+UVM_VERBOSITY=$(VERBOSITY) $(SIM_PLUSARGS) 2>&1 | tee $(LOG)
-	@grep -q "LAB_RESULT: PASS" $(LOG) \
-		&& echo ">>> VERDICT: PASS ($(LOG))" \
-		|| { echo ">>> VERDICT: FAIL ($(LOG))"; exit 1; }
+	@if grep -q "LAB_RESULT: PASS" $(LOG); then \
+		$(call clr,$(CLR_PASS)); \
+		printf "$$C>>> TEST SUCCESFULLY PASS !$$R (%s)\n" "$(LOG)"; \
+	else \
+		$(call clr,$(CLR_FAIL)); \
+		printf "$$C>>> TEST FAILURE !$$R (%s)\n" "$(LOG)"; \
+		exit 1; \
+	fi
 
 # single run with VCD dump (TRACE=1 rebuilds into a separate dir)
 waves:
@@ -219,13 +240,16 @@ smoke:
 #   test_all - full matrix (test + hunt + random/corner 382)
 # ------------------------------------------------------------
 test: sanity ds381 ds382 exh381 rand381 corner381 ds381_16 rand381_16 ds382_16
-	@echo ">>> REGRESSION 'test': ALL PASS"
+	@$(call clr,$(CLR_PASS)); \
+	printf "$$C>>> REGRESSION test: TEST SUCCESFULLY PASS !$$R\n"
 
 hunt: exh382
-	@echo ">>> REGRESSION 'hunt': ALL PASS (OVR defect is fixed)"
+	@$(call clr,$(CLR_PASS)); \
+	printf "$$C>>> REGRESSION hunt: TEST SUCCESFULLY PASS ! (OVR defect is fixed)$$R\n"
 
 test_all: test exh382 rand382 corner382 rand382_16
-	@echo ">>> REGRESSION 'test_all': ALL PASS"
+	@$(call clr,$(CLR_PASS)); \
+	printf "$$C>>> REGRESSION test_all: TEST SUCCESFULLY PASS !$$R\n"
 
 # ------------------------------------------------------------
 clean:
