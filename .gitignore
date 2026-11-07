@@ -1,0 +1,17 @@
+# ---- Артефакты сборки Verilator ----
+obj_*/
+obj_dir/
+*.vcd
+*.fst
+*.dmp
+*.vpd
+
+# ---- Логи и покрытия ----
+*.log
+*.dat
+*.dat.dir
+coverage.info
+annotated/
+
+# ---- GTKWave ----
+*.gtkw

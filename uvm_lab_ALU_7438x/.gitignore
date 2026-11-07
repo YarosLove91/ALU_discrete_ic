@@ -1,0 +1,23 @@
+# ---- Verilator artifacts----
+uvm_out/*
+obj_dir/
+*.vcd
+*.fst
+/simple_CPU_74181/*
+
+# LOGs
+logs/
+*.log
+
+# ---- UVM lib ----
+uvm-verilator/
+.uvm_downloaded
+
+# ---- Coverage ----
+coverage.dat
+*.dat.dir
+*.info
+annotated/
+
+# ---- GTKWave ----
+*.gtkw

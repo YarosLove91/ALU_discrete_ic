@@ -19,3 +19,8 @@ This repository presents an ALU based on 74_181 and 74_182 chips with 32 bits im
 [32 разрядное АЛУ 74181](./classic_ALU/74181_32bit/rtl/top/top_alu_32.v)
 
 [Скоростная схема ускоренного переноса](./common/74182_CLA/)
+
+
+## Лабораторные работы
+
+[UVM-верификация АЛУ 74381/74382 в среде Verilator](./uvm_lab_ALU_7438x/) — студентческая лабораторная работа по методологии UVM: окружение agent/refmodel/scoreboard/coverage, тесты по таблицам истинности datasheet, исчерпывающий перебор, охота на дефект OVR в 74382.

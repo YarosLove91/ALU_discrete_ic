@@ -1,0 +1,253 @@
+# ============================================================
+# Student lab: UVM verification of the 74381/74382 ALUs
+#   Simulator: Verilator 5.x + uvm-verilator (UVM 1800.2)
+#
+#   tb/            - UVM testbench (interface, package, top)
+#   ../simlpe_ALU/ - RTL under verification (74381 / 74382)
+#   uvm-verilator/ - UVM library (cloned by: make uvm_download)
+# ============================================================
+
+CXX      := g++
+
+# ------------------------------------------------------------
+# Run parameters (overridable from the command line)
+#   DUT  : 74381 | 74382 | 74381_16 | 74382_16
+#   TEST : alu_smoke_test | alu_sanity_test | alu_ds_test |
+#          alu_exhaustive_test | alu_random_test | alu_corner_test
+# ------------------------------------------------------------
+DUT  ?= 74381
+TEST ?= alu_ds_test
+N    ?= 1000
+VERBOSITY    ?= UVM_MEDIUM
+SIM_PLUSARGS ?=
+
+NUM_THREADS := $(shell nproc 2>/dev/null || echo 4)
+MAKEFLAGS += --no-print-directory
+
+# ------------------------------------------------------------
+# Paths to the RTL under verification (single source of truth)
+# ------------------------------------------------------------
+RTL_ROOT := $(CURDIR)/../simlpe_ALU
+RTL_381  := $(RTL_ROOT)/74381/rtl
+RTL_382  := $(RTL_ROOT)/74382/rtl
+
+ifeq ($(DUT),74381)
+  RTL_SRCS := $(RTL_381)/src/alu_74381.v
+else ifeq ($(DUT),74381_16)
+  RTL_SRCS := $(RTL_381)/src/alu_74381.v $(RTL_381)/top/alu_16_bit.v
+else ifeq ($(DUT),74382)
+  RTL_SRCS := $(RTL_382)/src/alu_74382_pkg.sv $(RTL_382)/src/alu_74382.sv
+else ifeq ($(DUT),74382_16)
+  RTL_SRCS := $(RTL_382)/src/alu_74382_pkg.sv $(RTL_382)/src/alu_74382.sv $(RTL_382)/top/alu_16_chain.sv
+else
+  $(error Unknown DUT='$(DUT)'. Available: 74381, 74382, 74381_16, 74382_16)
+endif
+
+# ------------------------------------------------------------
+# UVM (uvm-verilator)
+# ------------------------------------------------------------
+VERILATOR   := verilator
+UVM_DIR     := $(CURDIR)/uvm-verilator
+UVM_REPO    := https://github.com/chipsalliance/uvm-verilator.git
+UVM_MARKER  := .uvm_downloaded
+UVM_DPI_SRC := $(UVM_DIR)/src/dpi/uvm_dpi.cc
+
+TB_TOP   := alu_tb_top
+TB_DIR   := tb
+ENV_DIR  := tb/env
+RFM_DIR  := tb/ref_model
+TEST_DIR := tb/tests
+OUT_DIR  := uvm_out/$(DUT)
+LOG_DIR  := logs
+LOG      := $(LOG_DIR)/$(DUT)_$(TEST).log
+
+TB_SRCS  := $(TB_DIR)/alu_if.sv \
+            $(TB_DIR)/alu_tb_pkg.sv \
+            $(TB_DIR)/alu_tb_top.sv
+TB_ALL   := $(wildcard $(TB_DIR)/*.sv) $(wildcard $(ENV_DIR)/*.sv) \
+            $(wildcard $(RFM_DIR)/*.sv) $(wildcard $(TEST_DIR)/*.sv)
+
+# ------------------------------------------------------------
+# Linker auto-detection: mold -> lld -> gold -> system default
+# ------------------------------------------------------------
+LINKER ?= $(shell for l in mold lld gold; do \
+            if command -v $$l >/dev/null 2>&1; then echo $$l; break; fi; \
+          done)
+ifneq ($(strip $(LINKER)),)
+  LDFLAGS += -fuse-ld=$(LINKER)
+  LINKER_DISPLAY := $(LINKER)
+else
+  LINKER_DISPLAY := (system default: bfd)
+endif
+
+TRACE_FLAGS :=
+ifeq ($(TRACE),1)
+  TRACE_FLAGS := --trace
+  # keep the trace build isolated from the regular one
+  OUT_DIR := uvm_out/$(DUT)_trace
+endif
+
+BIN := $(OUT_DIR)/V$(TB_TOP)
+
+VFLAGS := \
+	--binary \
+	--timing \
+	--vpi \
+	-j $(NUM_THREADS) \
+	-Wno-fatal \
+	-Wno-DECLFILENAME \
+	-Wno-UNUSED \
+	-Wno-WIDTHTRUNC \
+	-Wno-WIDTHCONCAT \
+	-Wno-UNSIGNED \
+	-Wno-CASEINCOMPLETE \
+	-Wno-TIMESCALEMOD \
+	$(TRACE_FLAGS) \
+	+define+DUT_$(DUT) \
+	+incdir+$(UVM_DIR)/src \
+	+incdir+$(TB_DIR) \
+	+incdir+$(ENV_DIR) \
+	+incdir+$(RFM_DIR) \
+	+incdir+$(TEST_DIR) \
+	--top-module $(TB_TOP) \
+	--Mdir $(OUT_DIR) \
+	$(if $(strip $(LDFLAGS)),-LDFLAGS "$(LDFLAGS)",)
+
+# ------------------------------------------------------------
+# Targets
+# ------------------------------------------------------------
+.PHONY: all build run smoke sanity help list clean distclean \
+        uvm_download waves \
+        ds381 ds382 exh381 exh382 rand381 rand382 corner381 corner382 \
+        rand381_16 rand382_16 ds381_16 ds382_16 \
+        test hunt test_all
+
+all: run
+
+uvm_download: $(UVM_MARKER)
+
+$(UVM_MARKER):
+	@if [ ! -d "$(UVM_DIR)" ]; then \
+		echo ">>> [uvm] Cloning uvm-verilator..."; \
+		git clone --depth 1 $(UVM_REPO) $(UVM_DIR); \
+	fi
+	@touch $@
+
+build: $(BIN)
+
+$(BIN): $(UVM_MARKER) $(TB_ALL) $(RTL_SRCS) $(firstword $(MAKEFILE_LIST))
+	@mkdir -p $(OUT_DIR) $(LOG_DIR)
+	@echo ">>> [build] DUT=$(DUT) jobs=$(NUM_THREADS) ld=$(LINKER_DISPLAY)"
+	$(VERILATOR) $(VFLAGS) \
+		$(UVM_DIR)/src/uvm_pkg.sv \
+		$(TB_DIR)/alu_if.sv \
+		$(RTL_SRCS) \
+		$(TB_DIR)/alu_tb_pkg.sv \
+		$(TB_DIR)/alu_tb_top.sv \
+		$(UVM_DPI_SRC) \
+		-CFLAGS "-std=c++17"
+
+run: build
+	@mkdir -p $(LOG_DIR)
+	@echo ">>> [run] DUT=$(DUT) TEST=$(TEST) N=$(N)"
+	-$(BIN) +UVM_TESTNAME=$(TEST) +NUM_TRANSACTIONS=$(N) \
+		+UVM_VERBOSITY=$(VERBOSITY) $(SIM_PLUSARGS) 2>&1 | tee $(LOG)
+	@grep -q "LAB_RESULT: PASS" $(LOG) \
+		&& echo ">>> VERDICT: PASS ($(LOG))" \
+		|| { echo ">>> VERDICT: FAIL ($(LOG))"; exit 1; }
+
+# single run with VCD dump (TRACE=1 rebuilds into a separate dir)
+waves:
+	@$(MAKE) run TRACE=1 VERBOSITY=UVM_HIGH
+	@echo ">>> Waves: $(LOG_DIR)/waves.vcd (gtkwave $(LOG_DIR)/waves.vcd)"
+
+# ------------------------------------------------------------
+# Single runs (DUT x TEST)
+# ------------------------------------------------------------
+sanity:
+	@$(MAKE) run DUT=74381 TEST=alu_sanity_test
+
+ds381:
+	@$(MAKE) run DUT=74381 TEST=alu_ds_test
+ds382:
+	@$(MAKE) run DUT=74382 TEST=alu_ds_test
+ds381_16:
+	@$(MAKE) run DUT=74381_16 TEST=alu_ds_test
+ds382_16:
+	@$(MAKE) run DUT=74382_16 TEST=alu_ds_test
+
+exh381:
+	@$(MAKE) run DUT=74381 TEST=alu_exhaustive_test
+exh382:
+	@$(MAKE) run DUT=74382 TEST=alu_exhaustive_test
+
+rand381:
+	@$(MAKE) run DUT=74381 TEST=alu_random_test N=$(N)
+rand382:
+	@$(MAKE) run DUT=74382 TEST=alu_random_test N=$(N)
+rand381_16:
+	@$(MAKE) run DUT=74381_16 TEST=alu_random_test N=$(N)
+rand382_16:
+	@$(MAKE) run DUT=74382_16 TEST=alu_random_test N=$(N)
+
+corner381:
+	@$(MAKE) run DUT=74381 TEST=alu_corner_test
+corner382:
+	@$(MAKE) run DUT=74382 TEST=alu_corner_test
+
+smoke:
+	@$(MAKE) run DUT=74381 TEST=alu_smoke_test N=20 VERBOSITY=UVM_HIGH
+
+# ------------------------------------------------------------
+# Regressions
+#   test     - green suite: passes on the shipped RTL
+#   hunt     - stage-4 suite: exposes the OVR defect in alu_74382.sv
+#              (FAILs until the RTL is fixed - by design)
+#   test_all - full matrix: green after the defect is fixed
+# ------------------------------------------------------------
+test: sanity ds381 ds382 exh381 rand381 corner381 ds381_16 rand381_16 ds382_16
+	@echo ">>> REGRESSION 'test': ALL PASS"
+
+hunt: exh382
+	@echo ">>> REGRESSION 'hunt': ALL PASS (OVR defect is fixed)"
+
+test_all: test exh382 rand382 corner382 rand382_16
+	@echo ">>> REGRESSION 'test_all': ALL PASS"
+
+# ------------------------------------------------------------
+clean:
+	@rm -rf uvm_out $(LOG_DIR) *.vcd
+
+distclean: clean
+	@rm -rf $(UVM_DIR) $(UVM_MARKER)
+
+list:
+	@echo "DUT        : $(DUT)"
+	@echo "TEST       : $(TEST)"
+	@echo "N          : $(N)"
+	@echo "RTL_SRCS   : $(RTL_SRCS)"
+	@echo "BIN        : $(BIN)"
+	@echo "LD         : $(LINKER_DISPLAY)"
+	@echo "VERILATOR  : $(shell $(VERILATOR) --version)"
+
+help:
+	@echo "Student lab: UVM verification of the 74381/74382 ALUs (Verilator)"
+	@echo ""
+	@echo "Quick start:"
+	@echo "  make uvm_download        - clone uvm-verilator (once)"
+	@echo "  make smoke               - quick smoke run (74381)"
+	@echo "  make run DUT=<dut> TEST=<test> [N=<count>]"
+	@echo ""
+	@echo "  DUT : 74381 | 74382 | 74381_16 | 74382_16"
+	@echo "  TEST: alu_smoke_test | alu_sanity_test | alu_ds_test |"
+	@echo "        alu_exhaustive_test | alu_random_test | alu_corner_test"
+	@echo ""
+	@echo "Regressions:"
+	@echo "  make test                - green suite (shipped RTL)"
+	@echo "  make hunt                - stage 4: 74382 OVR defect hunt (FAIL until fixed)"
+	@echo "  make test_all            - full matrix (PASS after the fix)"
+	@echo ""
+	@echo "Misc:"
+	@echo "  make waves DUT=... TEST=... - run with VCD dump (logs/waves.vcd)"
+	@echo "  make list                - print variables"
+	@echo "  make clean / distclean   - cleanup (distclean removes uvm-verilator)"

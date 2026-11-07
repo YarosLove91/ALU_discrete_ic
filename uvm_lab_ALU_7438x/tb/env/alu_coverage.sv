@@ -1,0 +1,70 @@
+// ============================================================
+// File    : alu_coverage.sv
+// Author  : M.YarosLove <yoruk91@gmail.com>
+// Project : UVM verification lab for 74381/74382 ALUs (Verilator)
+// ------------------------------------------------------------
+// Functional coverage collector (uvm_subscriber):
+//   cp_op  - all 8 operations
+//   cp_cn  - carry input
+//   cp_a/cp_b - corner operand values
+//               (0, 1, MAX_POS, MIN_NEG, ALL_ONES, others)
+//   crosses op x cn and op x a x b
+// Coverage is printed in report_phase; the lab target is 100%.
+// ============================================================
+  class alu_coverage extends uvm_subscriber #(alu_transaction);
+    `uvm_component_utils(alu_coverage)
+
+    alu_transaction tr_c;
+
+    covergroup cg;
+      cp_op : coverpoint tr_c.s {
+        bins clear_  = {OP_CLEAR};
+        bins b_sub_a = {OP_B_SUB_A};
+        bins a_sub_b = {OP_A_SUB_B};
+        bins add     = {OP_ADD};
+        bins xor_    = {OP_XOR};
+        bins or_     = {OP_OR};
+        bins and_    = {OP_AND};
+        bins preset  = {OP_PRESET};
+      }
+      cp_cn : coverpoint tr_c.cn;
+
+      cp_a : coverpoint tr_c.a {
+        bins zero    = {0};
+        bins one     = {1};
+        bins max_pos = {MAX_POS};
+        bins min_neg = {MIN_NEG};
+        bins ones    = {ALL_ONES};
+        bins mid     = default;
+      }
+      cp_b : coverpoint tr_c.b {
+        bins zero    = {0};
+        bins one     = {1};
+        bins max_pos = {MAX_POS};
+        bins min_neg = {MIN_NEG};
+        bins ones    = {ALL_ONES};
+        bins mid     = default;
+      }
+
+      x_op_cn  : cross cp_op, cp_cn;
+      x_op_a_b : cross cp_op, cp_a, cp_b;
+    endgroup
+
+    function new(string name = "alu_coverage", uvm_component parent = null);
+      super.new(name, parent);
+      cg = new();
+    endfunction : new
+
+    virtual function void write(alu_transaction t);
+      tr_c = t;
+      cg.sample();
+    endfunction : write
+
+    virtual function void report_phase(uvm_phase phase);
+      super.report_phase(phase);
+      `uvm_info({get_type_name(), ".REPORT"},
+                $sformatf("functional coverage: %.2f%%", cg.get_coverage()),
+                UVM_MEDIUM)
+    endfunction : report_phase
+
+  endclass : alu_coverage
