@@ -27,7 +27,7 @@
 
     virtual task run_phase(uvm_phase phase);
       `uvm_info({get_type_name(), ".START"},
-          $sformatf("starting test: DUT=alu16 W=%0d cfg: COVERAGE_EN=%0b RFM_XCHECK_EN=%0b USE_CPP_REF=%0b NUM_TRANSACTIONS=%0d",
+          $sformatf("starting test: DUT=cpu_top W=%0d cfg: COVERAGE_EN=%0b RFM_XCHECK_EN=%0b USE_CPP_REF=%0b NUM_TRANSACTIONS=%0d",
               W, COVERAGE_EN, RFM_XCHECK_EN, USE_CPP_REF, NUM_TRANSACTIONS),
           UVM_HIGH)
       phase.raise_objection(this);
@@ -53,10 +53,10 @@
         (!require_dut_checks || g_scb_checked > 0);
 
       if (ok) begin
-        $display("LAB_RESULT: PASS  (DUT=alu16 TEST=%s scb_checked=%0d)",
+        $display("LAB_RESULT: PASS  (DUT=cpu_top TEST=%s scb_checked=%0d)",
             get_type_name(), g_scb_checked);
       end else begin
-        $display("LAB_RESULT: FAIL  (DUT=alu16 TEST=%s scb_checked=%0d mismatches=%0d errors=%0d)",
+        $display("LAB_RESULT: FAIL  (DUT=cpu_top TEST=%s scb_checked=%0d mismatches=%0d errors=%0d)",
             get_type_name(), g_scb_checked, g_scb_mismatches,
             srv.get_severity_count(UVM_ERROR));
         $fatal(1, "lab test failed - see UVM_ERROR messages above");

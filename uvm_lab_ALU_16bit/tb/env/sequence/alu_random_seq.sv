@@ -5,7 +5,9 @@
 // ------------------------------------------------------------
 // Constrained-random sequence; item count is set by the test
 // from alu_cfg_pkg::NUM_TRANSACTIONS. Corner values are weighted
-// via dist so that carries/overflows occur more often.
+// via dist so that carries/overflows occur more often; ra1 != ra2
+// keeps the two operand registers distinct; b_source exercises
+// both the register and the immediate operand-B paths.
 // ============================================================
 
   class alu_random_seq extends alu_base_seq;
@@ -25,6 +27,7 @@
         if (!tr.randomize() with {
                 a dist { 0 := 10, ALL_ONES := 10, [1 : ALL_ONES - 1] :/ 80 };
                 b dist { 0 := 10, ALL_ONES := 10, [1 : ALL_ONES - 1] :/ 80 };
+                ra1 != ra2;
             }) begin
             `uvm_fatal("ALU_RANDOM_SEQ.RANDOMIZE", "randomize() failed")
         end

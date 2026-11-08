@@ -34,9 +34,11 @@
 package alu_cfg_pkg;
 
   // --------------------------------------------------------
-  // Fixed data width of the alu16 DUT
+  // Fixed geometry of the cpu_top DUT
   // --------------------------------------------------------
-  localparam int W = 16;
+  localparam int W        = 16;  // data width
+  localparam int NUM_REGS = 8;   // register file size (param_reg_file)
+  localparam int ADDR_W   = 3;   // register address width ($clog2(NUM_REGS))
 
   // Derived width constants
   localparam bit [W-1:0] ALL_ONES = {W{1'b1}};

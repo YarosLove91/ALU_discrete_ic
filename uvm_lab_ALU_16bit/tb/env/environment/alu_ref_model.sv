@@ -5,9 +5,16 @@
 // ------------------------------------------------------------
 // Reference model (predictor): receives a transaction carrying
 // the DUT inputs and actual outputs from the TLM FIFO, computes
-// the expected result with the package golden function
+// the expected ALU result with the package golden function
 // (golden_alu16_sel: SV or C++ DPI per USE_CPP_REF) and forwards
 // it to the scoreboard.
+//
+// The prediction uses the effective operands sampled by the
+// monitor (tr.a = reg_read_data1, tr.b = b_source ? alu_b_imm :
+// reg_read_data2), i.e. the values actually presented to the ALU
+// inside cpu_top; the register file itself is checked separately
+// by the scoreboard echo comparison (exp_rdata1/2 from the
+// monitor shadow).
 //
 // RFM_XCHECK_EN (alu_cfg_pkg) additionally cross-checks the
 // golden result of the two canonical arithmetic operations

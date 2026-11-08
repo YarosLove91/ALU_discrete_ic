@@ -3,15 +3,23 @@
 // Author  : M.YarosLove <yoruk91@gmail.com>
 // Project : UVM verification lab for 16-bit 74181+74182 ALU (Verilator)
 // ------------------------------------------------------------
-// Driver: applies transactions to the interface on clk edges.
+// Driver: applies transactions to the interface through the
+// drv_cb clocking block (stimuli are driven at the clocking
+// event, race-free against the DUT sampling).
 //
-// TB protocol (the DUT is purely combinational):
-//   - at clock N the driver drives a/b/cin/mode/sel and
-//     valid <= 1 (NBA);
-//   - during clock N the combinational DUT outputs settle;
-//   - at clock N+1 the monitor sees valid=1 together with a
-//     consistent "inputs/outputs" pair; the driver drops valid.
-// Net result: one transaction = 2 clocks (1 clock of valid).
+// TB protocol (DUT: cpu_top, register file write is synchronous,
+// ALU path is combinational), one transaction = 4 clocks:
+//   - clock N   : reg_write_enable=1, write a -> R[ra1];
+//   - clock N+1 : write b -> R[ra2] (register path only, the
+//                 write commits at this edge; immediate path
+//                 drops write_enable);
+//   - clock N+2 : op phase - read addresses, alu_cin/mode/comm,
+//                 b_source_sel/alu_b_imm and valid <= 1; the
+//                 combinational ALU output settles during the
+//                 cycle;
+//   - clock N+3 : the monitor sees valid=1 together with a
+//                 consistent "inputs/outputs" pair; the driver
+//                 drops valid.
 // ============================================================
   class alu_driver extends uvm_driver #(alu_transaction);
     `uvm_component_utils(alu_driver)
@@ -33,31 +41,66 @@
     virtual task run_phase(uvm_phase phase);
       super.run_phase(phase);
       // idle levels
-      vif.a     <= '0;
-      vif.b     <= '0;
-      vif.cin   <= '0;
-      vif.mode  <= '0;
-      vif.sel   <= '0;
-      vif.valid <= 1'b0;
+      @(vif.drv_cb);
+      vif.drv_cb.reg_write_enable <= 1'b0;
+      vif.drv_cb.reg_read_addr1   <= '0;
+      vif.drv_cb.reg_read_addr2   <= '0;
+      vif.drv_cb.reg_write_addr   <= '0;
+      vif.drv_cb.reg_write_data   <= '0;
+      vif.drv_cb.alu_cin          <= '0;
+      vif.drv_cb.alu_mode         <= '0;
+      vif.drv_cb.alu_comm         <= '0;
+      vif.drv_cb.b_source_sel     <= '0;
+      vif.drv_cb.alu_b_imm        <= '0;
+      vif.drv_cb.valid            <= 1'b0;
 
       wait (vif.rst === 1'b0);   // wait for reset release (rst active HIGH)
-      @(posedge vif.clk);
+      @(vif.drv_cb);
 
       forever begin
         seq_item_port.get_next_item(req);
         req.id = g_item_id++;
-        @(posedge vif.clk);
-        vif.a     <= req.a;
-        vif.b     <= req.b;
-        vif.cin   <= req.cin;
-        vif.mode  <= req.mode;
-        vif.sel   <= req.sel;
-        vif.valid <= 1'b1;
+
+        // ---- phase 1: operand A -> R[ra1] ----
+        @(vif.drv_cb);
+        vif.drv_cb.reg_write_enable <= 1'b1;
+        vif.drv_cb.reg_write_addr   <= req.ra1;
+        vif.drv_cb.reg_write_data   <= req.a;
+        `uvm_info({get_type_name(), ".RF_WRITE"},
+                  $sformatf("[%0d] R%0d <= %04h", req.id, req.ra1, req.a),
+                  UVM_HIGH)
+
+        // ---- phase 2: operand B -> R[ra2] (register path only) ----
+        @(vif.drv_cb);
+        if (req.b_source == 1'b0) begin
+          vif.drv_cb.reg_write_addr <= req.ra2;
+          vif.drv_cb.reg_write_data <= req.b;
+          `uvm_info({get_type_name(), ".RF_WRITE"},
+                    $sformatf("[%0d] R%0d <= %04h", req.id, req.ra2, req.b),
+                    UVM_HIGH)
+        end
+        else begin
+          vif.drv_cb.reg_write_enable <= 1'b0;
+        end
+
+        // ---- phase 3: op phase - controls + valid ----
+        @(vif.drv_cb);
+        vif.drv_cb.reg_write_enable <= 1'b0;
+        vif.drv_cb.reg_read_addr1   <= req.ra1;
+        vif.drv_cb.reg_read_addr2   <= req.ra2;
+        vif.drv_cb.alu_cin          <= req.cin;
+        vif.drv_cb.alu_mode         <= req.mode;
+        vif.drv_cb.alu_comm         <= req.sel;
+        vif.drv_cb.b_source_sel     <= req.b_source;
+        vif.drv_cb.alu_b_imm        <= req.b;
+        vif.drv_cb.valid            <= 1'b1;
         `uvm_info({get_type_name(), ".DRIVE"},
                   $sformatf("[%0d] driving %s", req.id, req.inputs2str()),
                   UVM_HIGH)
-        @(posedge vif.clk);
-        vif.valid <= 1'b0;
+
+        // ---- phase 4: monitor samples here; drop valid ----
+        @(vif.drv_cb);
+        vif.drv_cb.valid <= 1'b0;
         seq_item_port.item_done();
       end
     endtask : run_phase

@@ -3,14 +3,17 @@
 // Author  : M.YarosLove <yoruk91@gmail.com>
 // Project : UVM verification lab for 16-bit 74181+74182 ALU (Verilator)
 // ------------------------------------------------------------
-// Scoreboard: compares the actual DUT result against the golden
-// expectation (exp_result). Keeps counters and logs the first
-// SCB_MAX_LOG mismatches (the rest go to the counter only, to
-// avoid flooding the log).
+// Scoreboard: compares the actual DUT outputs against the
+// expectations:
+//   alu_result            vs exp_result (golden model)
+//   reg_read_data1/2      vs exp_rdata1/2 (monitor shadow
+//                          register file - echo check)
+// Keeps counters and logs the first SCB_MAX_LOG mismatches (the
+// rest go to the counter only, to avoid flooding the log).
 //
-// The remaining DUT outputs (cout, nbo, ngo, half_carry,
-// overflow) are captured in the transaction; they join the
-// comparison when the golden model is extended beyond result.
+// The remaining DUT outputs (cout, nbo, ngo) are captured in the
+// transaction; they join the comparison when the golden model is
+// extended beyond result.
 // ============================================================
 class alu_scoreboard extends uvm_subscriber #(alu_transaction);
     `uvm_component_utils(alu_scoreboard)
@@ -27,6 +30,14 @@ class alu_scoreboard extends uvm_subscriber #(alu_transaction);
       if (tr.result !== tr.exp_result) begin
         bad = {bad, $sformatf(" result[dut=%04h exp=%04h]",
             tr.result, tr.exp_result)};
+      end
+      if (tr.rdata1 !== tr.exp_rdata1) begin
+        bad = {bad, $sformatf(" RF1[dut=%04h exp=%04h]",
+            tr.rdata1, tr.exp_rdata1)};
+      end
+      if (tr.rdata2 !== tr.exp_rdata2) begin
+        bad = {bad, $sformatf(" RF2[dut=%04h exp=%04h]",
+            tr.rdata2, tr.exp_rdata2)};
       end
 
       g_scb_checked++;

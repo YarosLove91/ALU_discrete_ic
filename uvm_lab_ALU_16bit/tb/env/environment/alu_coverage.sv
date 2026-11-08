@@ -6,10 +6,12 @@
 // Functional coverage collector (uvm_subscriber):
 //   cp_mode / cp_sel  - all 32 functions ({mode, sel})
 //   cp_cin            - carry input (active LOW)
+//   cp_bsrc           - operand B source (register / immediate)
+//   cp_ra1 / cp_ra2   - register file addresses (R0..R7)
 //   cp_a/cp_b         - corner operand values
 //                       (0, 1, MAX_POS, MIN_NEG, ALL_ONES-1,
 //                        ALL_ONES, others)
-//   crosses: func (mode x sel), func x cin, a x b
+//   crosses: func (mode x sel), func x cin, func x bsrc, a x b
 // Coverage is printed in report_phase; the lab target is 100%.
 // Gated by the COVERAGE_EN config bit (alu_cfg_pkg) at two levels:
 // alu_env does not create/connect the collector when it is 0, and
@@ -27,6 +29,13 @@
         bins sel_[] = {[0 : 15]};
       }
       cp_cin  : coverpoint tr_c.cin;
+      cp_bsrc : coverpoint tr_c.b_source;
+      cp_ra1  : coverpoint tr_c.ra1 {
+        bins reg_[] = {[0 : NUM_REGS - 1]};
+      }
+      cp_ra2  : coverpoint tr_c.ra2 {
+        bins reg_[] = {[0 : NUM_REGS - 1]};
+      }
 
       cp_a : coverpoint tr_c.a {
         bins zero     = {0};
@@ -47,9 +56,10 @@
         bins mid      = default;
       }
 
-      x_func     : cross cp_mode, cp_sel;
-      x_func_cin : cross cp_mode, cp_sel, cp_cin;
-      x_a_b      : cross cp_a, cp_b;
+      x_func      : cross cp_mode, cp_sel;
+      x_func_cin  : cross cp_mode, cp_sel, cp_cin;
+      x_func_bsrc : cross cp_mode, cp_sel, cp_bsrc;
+      x_a_b       : cross cp_a, cp_b;
     endgroup
 
     function new(string name = "alu_coverage", uvm_component parent = null);

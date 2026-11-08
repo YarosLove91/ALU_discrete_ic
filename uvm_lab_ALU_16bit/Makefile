@@ -3,7 +3,8 @@
 #   Simulator: Verilator 5.x + uvm-verilator (UVM 1800.2)
 #
 #   tb/              - UVM testbench (interface, packages, top)
-#   top_alu_16.sv    - DUT (alu16: 4x74181 + 74182 CLA)
+#   DUT/             - RTL under verification (cpu_top =
+#                      param_reg_file + operand-B mux + alu16)
 #   ../classic_ALU/  - 74181 slice RTL (dependency)
 #   ../common_CLA/   - 74182 CLA RTL (dependency)
 #   uvm-verilator/   - UVM library (cloned by: make uvm_download)
@@ -26,7 +27,7 @@ CXX      := g++
 #   MATCH_LOG-> SCB_MATCH_LOG_EN    (1/0 per-match scoreboard log)
 #   CPPREF   -> USE_CPP_REF         (1 = C++ DPI golden, 0 = SV)
 # ------------------------------------------------------------
-DUT  := alu16
+DUT  := cpu_top
 TEST ?= alu_smoke_test
 VERBOSITY    ?= UVM_HIGH
 # Additional simulation plusargs (override: make SIM_PLUSARGS="...")
@@ -62,13 +63,17 @@ MAKEFLAGS += --no-print-directory
 
 # ------------------------------------------------------------
 # Paths to the RTL under verification (single source of truth)
+#   DUT/ - lab-local RTL: cpu_top (simple_CPU_top.v) =
+#          param_reg_file + operand-B mux + alu16 (top_alu_16.sv)
 # ------------------------------------------------------------
 RTL_ROOT := $(CURDIR)/..
+DUT_DIR  := $(CURDIR)/DUT
 RTL_181  := $(RTL_ROOT)/classic_ALU/src_common/74181.v
 RTL_182  := $(RTL_ROOT)/common_CLA/74182_CLA/74182_CLA.v
-DUT_TOP  := $(CURDIR)/top_alu_16.sv
+DUT_TOP  := $(DUT_DIR)/simple_CPU_top.v
 
-RTL_SRCS := $(RTL_181) $(RTL_182) $(DUT_TOP)
+RTL_SRCS := $(RTL_181) $(RTL_182) $(DUT_DIR)/top_alu_16.sv \
+            $(DUT_DIR)/reg_file.v $(DUT_TOP)
 
 # ------------------------------------------------------------
 # UVM (uvm-verilator)
@@ -143,6 +148,7 @@ VFLAGS := \
 	-Wno-UNSIGNED \
 	-Wno-CASEINCOMPLETE \
 	-Wno-TIMESCALEMOD \
+	-Wno-PINMISSING \
 	$(TRACE_FLAGS) \
 	$(CFG_DEFINES) \
 	+incdir+$(UVM_DIR)/src \
@@ -213,9 +219,7 @@ $(BIN): $(UVM_MARKER) $(TB_ALL) $(RTL_SRCS) $(CFG_STAMP) $(firstword $(MAKEFILE_
 	$(VERILATOR) $(VFLAGS) \
 		$(UVM_DIR)/src/uvm_pkg.sv \
 		$(TB_DIR)/alu_if.sv \
-		$(RTL_181) \
-		$(RTL_182) \
-		$(DUT_TOP) \
+		$(RTL_SRCS) \
 		$(TB_PKG_SRCS) \
 		$(TB_DIR)/alu_tb_top.sv \
 		$(RFM_CPP_SRC) \
