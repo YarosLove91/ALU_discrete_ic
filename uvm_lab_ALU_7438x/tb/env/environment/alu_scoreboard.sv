@@ -8,13 +8,13 @@
 //   74381    : F, G, P
 //   74381_16 : F, Co (routed as cn4 on the interface)
 //   74382/16 : F, OVR, Cn+4
-// Keeps counters and logs the first MAX_LOG mismatches (the rest
-// go to the counter only, to avoid flooding the log).
+// Keeps counters and logs the first SCB_MAX_LOG mismatches (the
+// rest go to the counter only, to avoid flooding the log).
 // ============================================================
-  class alu_scoreboard extends uvm_subscriber #(alu_transaction);
+class alu_scoreboard extends uvm_subscriber #(alu_transaction);
     `uvm_component_utils(alu_scoreboard)
 
-    int MAX_LOG = 20;
+    // detailed mismatch log cap comes from alu_cfg_pkg (SCB_MAX_LOG)
 
     function new(string name = "alu_scoreboard", uvm_component parent = null);
       super.new(name, parent);
@@ -59,20 +59,22 @@
       g_scb_checked++;
       if (bad == "") begin
           g_scb_matches++;
-          `uvm_info({get_type_name(), ".MATCHED"},
-                    $sformatf("[%0d] match: %s", tr.id, tr.inputs2str()),
-                    UVM_HIGH)
+          if (SCB_MATCH_LOG_EN) begin
+            `uvm_info({get_type_name(), ".MATCHED"},
+                $sformatf("[%0d] match: %s", tr.id, tr.inputs2str()),
+                UVM_HIGH)
+          end
       end else begin
         g_scb_mismatches++;
-        if (g_scb_mismatches <= MAX_LOG) begin
+        if (g_scb_mismatches <= SCB_MAX_LOG) begin
             `uvm_error({get_type_name(), ".MISMATCH"},
                 $sformatf("[%0d]%s |%s", tr.id, tr.inputs2str(), bad))
         end
-        else if (g_scb_mismatches == MAX_LOG + 1) begin
+          else if (g_scb_mismatches == SCB_MAX_LOG + 1) begin
             `uvm_error({get_type_name(), ".LOG_LIMIT"},
                 $sformatf("detailed mismatch log capped at %0d messages, further mismatches counted only",
-                    MAX_LOG))
-        end
+                          SCB_MAX_LOG))
+          end
       end
     endfunction : write
 

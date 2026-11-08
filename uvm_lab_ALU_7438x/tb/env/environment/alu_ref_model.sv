@@ -58,11 +58,15 @@
         end
         DUT_381_16: begin
           golden_381_w16(tr.a, tr.b, tr.cn, tr.s, tr.exp_f, tr.exp_cn4);
-          xcheck_arith_16(tr);
+          if (RFM_XCHECK_EN) begin
+            xcheck_arith_16(tr);
+          end
         end
         DUT_382_16: begin
           golden_382_w16(tr.a, tr.b, tr.cn, tr.s, tr.exp_f, tr.exp_ovr, tr.exp_cn4);
-          xcheck_arith_16(tr);
+          if (RFM_XCHECK_EN) begin
+              xcheck_arith_16(tr);
+          end
         end
       endcase
     endfunction : predict

@@ -27,7 +27,9 @@
       agt    = alu_agent::type_id::create("agt", this);
       rfm    = alu_ref_model::type_id::create("rfm", this);
       scb    = alu_scoreboard::type_id::create("scb", this);
-      cov    = alu_coverage::type_id::create("cov", this);
+      if (COVERAGE_EN) begin
+        cov = alu_coverage::type_id::create("cov", this);
+      end
       to_rfm = new("to_rfm", this);
     endfunction : build_phase
 
@@ -36,7 +38,9 @@
       agt.mon.ap.connect(to_rfm.analysis_export);
       rfm.in_port.connect(to_rfm.get_export);
       rfm.ap.connect(scb.analysis_export);
-      agt.mon.ap.connect(cov.analysis_export);
+      if (COVERAGE_EN) begin
+        agt.mon.ap.connect(cov.analysis_export);
+      end
     endfunction : connect_phase
 
   endclass : alu_env

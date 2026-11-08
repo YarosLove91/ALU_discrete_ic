@@ -15,6 +15,7 @@
 module alu_tb_top;
 
     import uvm_pkg::*;
+    import alu_cfg_pkg::*;
     import alu_tb_pkg::*;
     import alu_test_pkg::*;
 

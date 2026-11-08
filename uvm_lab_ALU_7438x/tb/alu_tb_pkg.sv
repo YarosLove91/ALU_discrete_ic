@@ -3,14 +3,12 @@
 // Author  : M.YarosLove <yoruk91@gmail.com>
 // Project : UVM verification lab for 74381/74382 ALUs (Verilator)
 // ------------------------------------------------------------
-// Common testbench package (base of the dependency chain):
-//   - DUT selection (compile-time define from the Makefile)
-//   - shared parameters, operation enum, virtual interface type
-//   - global verdict counters
-//   - golden (reference) models and datasheet truth tables
-//     (`includes from tb/ref_model/)
+// Common testbench package: operation enum, virtual interface
+// type, global verdict counters and golden (reference) models
+// with datasheet truth tables (`includes from tb/ref_model/).
+// All compile-time configuration lives in alu_cfg_pkg.
 // UVM classes live in the local packages:
-//   alu_agent_pkg (tb/env/agent), alu_seq_pkg (tb/env/sequence),
+//   alu_seq_pkg (tb/env/sequence), alu_agent_pkg (tb/env/agent),
 //   alu_env_pkg (tb/env/environment), alu_test_pkg (tb/tests).
 // ============================================================
 `ifndef ALU_TB_PKG_SV
@@ -18,35 +16,10 @@
 
 package alu_tb_pkg;
 
-    import uvm_pkg::*;
-    `include "uvm_macros.svh"
+  import uvm_pkg::*;
+  import alu_cfg_pkg::*;
 
-    // --------------------------------------------------------
-    // DUT selection (set by the Makefile: +define+DUT_<...>)
-    // --------------------------------------------------------
-    typedef enum { DUT_381_4, DUT_382_4, DUT_381_16, DUT_382_16 } dut_kind_e;
-
-`ifdef DUT_74381
-    localparam dut_kind_e DUT_KIND = DUT_381_4;
-    localparam int        W        = 4;
-`elsif DUT_74382
-    localparam dut_kind_e DUT_KIND = DUT_382_4;
-    localparam int        W        = 4;
-`elsif DUT_74381_16
-    localparam dut_kind_e DUT_KIND = DUT_381_16;
-    localparam int        W        = 16;
-`elsif DUT_74382_16
-    localparam dut_kind_e DUT_KIND = DUT_382_16;
-    localparam int        W        = 16;
-`else
-    localparam dut_kind_e DUT_KIND = DUT_381_4;
-    localparam int        W        = 4;
-`endif
-
-  localparam bit [W-1:0] ALL_ONES = {W{1'b1}};
-  localparam bit [W-1:0] MIN_NEG  = {1'b1, {(W-1){1'b0}}};  // 0x8 / 0x8000
-  localparam bit [W-1:0] MAX_POS  = ~MIN_NEG;                // 0x7 / 0x7FFF
-  localparam bit         FAM_382  = (DUT_KIND == DUT_382_4) || (DUT_KIND == DUT_382_16);
+  `include "uvm_macros.svh"
 
   // Operation encoding shared by both families (Function Select Table)
   typedef enum bit [2:0] {

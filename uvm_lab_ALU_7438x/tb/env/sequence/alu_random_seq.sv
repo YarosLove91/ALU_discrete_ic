@@ -4,8 +4,8 @@
 // Project : UVM verification lab for 74381/74382 ALUs (Verilator)
 // ------------------------------------------------------------
 // Constrained-random sequence; item count is set by the test
-// (+NUM_TRANSACTIONS plusarg). Corner values are weighted via
-// dist so that carries/overflows occur more often.
+// from alu_cfg_pkg::NUM_TRANSACTIONS. Corner values are weighted
+// via dist so that carries/overflows occur more often.
 // ============================================================
 
 class alu_random_seq extends alu_base_seq;

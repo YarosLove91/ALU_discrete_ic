@@ -14,14 +14,33 @@ CXX      := g++
 #   DUT  : 74381 | 74382 | 74381_16 | 74382_16
 #   TEST : alu_smoke_test | alu_sanity_test | alu_ds_test |
 #          alu_exhaustive_test | alu_random_test | alu_corner_test
+#
+# Compile-time configuration (alu_cfg_pkg knobs, passed as
+# +define+<NAME>=<value>; changing any of them rebuilds the DUT):
+#   N        -> NUM_TRANSACTIONS   (alu_random_test vectors)
+#   SMOKE_N  -> SMOKE_TRANSACTIONS (alu_smoke_test vectors)
+#   COV      -> COVERAGE_EN        (1/0 functional coverage)
+#   XCHK     -> RFM_XCHECK_EN      (1/0 golden 16-bit cross-check)
+#   SCB_LOG  -> SCB_MAX_LOG        (detailed mismatch log cap)
 # ------------------------------------------------------------
 DUT  ?= 74381
 TEST ?= alu_ds_test
-N    ?= 1000
-VERBOSITY ?= UVM_MEDIUM
+N        ?= 1000
+SMOKE_N  ?= 20
+COV      ?= 1
+XCHK     ?= 1
+SCB_LOG  ?= 20
+VERBOSITY    ?= UVM_MEDIUM
 # Additional simulation plusargs (override: make SIM_PLUSARGS="...")
 # +UVM_NO_RELNOTES suppresses the UVM release-notes banner
 SIM_PLUSARGS ?= +UVM_NO_RELNOTES
+
+CFG_DEFINES := +define+NUM_TRANSACTIONS=$(N) \
+               +define+SMOKE_TRANSACTIONS=$(SMOKE_N) \
+               +define+COVERAGE_EN=$(COV) \
+               +define+RFM_XCHECK_EN=$(XCHK) \
+               +define+SCB_MAX_LOG=$(SCB_LOG)
+CFG_STRING  := DUT=$(DUT) N=$(N) SMOKE_N=$(SMOKE_N) COV=$(COV) XCHK=$(XCHK) SCB_LOG=$(SCB_LOG)
 
 NUM_THREADS := $(shell nproc 2>/dev/null || echo 4)
 MAKEFLAGS += --no-print-directory
@@ -66,9 +85,10 @@ LOG_DIR   := logs
 LOG       := $(LOG_DIR)/$(DUT)_$(TEST).log
 
 # Compilation units in dependency order:
-# common pkg -> sequence pkg -> agent pkg -> env pkg -> test pkg -> top;
-# class files are `included into their packages
-TB_PKG_SRCS := $(TB_DIR)/alu_tb_pkg.sv \
+# cfg pkg -> common pkg -> sequence pkg -> agent pkg -> env pkg ->
+# test pkg -> top; class files are `included into their packages
+TB_PKG_SRCS := $(TB_DIR)/alu_cfg_pkg.sv \
+               $(TB_DIR)/alu_tb_pkg.sv \
                $(SEQ_DIR)/alu_seq_pkg.sv \
                $(AGENT_DIR)/alu_agent_pkg.sv \
                $(ENV_DIR)/alu_env_pkg.sv \
@@ -114,6 +134,7 @@ VFLAGS := \
 	-Wno-TIMESCALEMOD \
 	$(TRACE_FLAGS) \
 	+define+DUT_$(DUT) \
+	$(CFG_DEFINES) \
 	+incdir+$(UVM_DIR)/src \
 	+incdir+$(TB_DIR) \
 	+incdir+$(RFM_DIR) \
@@ -144,7 +165,7 @@ endef
 # ------------------------------------------------------------
 # Targets
 # ------------------------------------------------------------
-.PHONY: all build run smoke sanity help list clean distclean \
+.PHONY: all build run smoke sanity help list clean distclean FORCE \
         uvm_download waves \
         ds381 ds382 exh381 exh382 rand381 rand382 corner381 corner382 \
         rand381_16 rand382_16 ds381_16 ds382_16 \
@@ -163,9 +184,20 @@ $(UVM_MARKER):
 
 build: $(BIN)
 
-$(BIN): $(UVM_MARKER) $(TB_ALL) $(RTL_SRCS) $(firstword $(MAKEFILE_LIST))
+# Config stamp: rewrites (and thus triggers a rebuild) only when
+# the compile-time configuration actually changes
+CFG_STAMP := $(OUT_DIR)/.cfg_stamp
+
+$(CFG_STAMP): FORCE
+	@mkdir -p $(OUT_DIR)
+	@echo "$(CFG_STRING) TRACE=$(TRACE)" > $@.tmp
+	@if cmp -s $@.tmp $@ 2>/dev/null; then rm -f $@.tmp; else mv $@.tmp $@; fi
+
+FORCE:
+
+$(BIN): $(UVM_MARKER) $(TB_ALL) $(RTL_SRCS) $(CFG_STAMP) $(firstword $(MAKEFILE_LIST))
 	@mkdir -p $(OUT_DIR) $(LOG_DIR)
-	@echo ">>> [build] DUT=$(DUT) jobs=$(NUM_THREADS) ld=$(LINKER_DISPLAY)"
+	@echo ">>> [build] $(CFG_STRING) jobs=$(NUM_THREADS) ld=$(LINKER_DISPLAY)"
 	$(VERILATOR) $(VFLAGS) \
 		$(UVM_DIR)/src/uvm_pkg.sv \
 		$(TB_DIR)/alu_if.sv \
@@ -177,8 +209,8 @@ $(BIN): $(UVM_MARKER) $(TB_ALL) $(RTL_SRCS) $(firstword $(MAKEFILE_LIST))
 
 run: build
 	@mkdir -p $(LOG_DIR)
-	@echo ">>> [run] DUT=$(DUT) TEST=$(TEST) N=$(N)"
-	-$(BIN) +UVM_TESTNAME=$(TEST) +NUM_TRANSACTIONS=$(N) \
+	@echo ">>> [run] DUT=$(DUT) TEST=$(TEST) N=$(N) COV=$(COV)"
+	-$(BIN) +UVM_TESTNAME=$(TEST) \
 		+UVM_VERBOSITY=$(VERBOSITY) $(SIM_PLUSARGS) 2>&1 | tee $(LOG)
 	@if grep -q "LAB_RESULT: PASS" $(LOG); then \
 		$(call clr,$(CLR_PASS)); \
@@ -229,7 +261,7 @@ corner382:
 	@$(MAKE) run DUT=74382 TEST=alu_corner_test
 
 smoke:
-	@$(MAKE) run DUT=74381 TEST=alu_smoke_test N=20 VERBOSITY=UVM_HIGH
+	@$(MAKE) run DUT=74381 TEST=alu_smoke_test VERBOSITY=UVM_HIGH
 
 # ------------------------------------------------------------
 # Regressions
@@ -261,7 +293,7 @@ distclean: clean
 list:
 	@echo "DUT        : $(DUT)"
 	@echo "TEST       : $(TEST)"
-	@echo "N          : $(N)"
+	@echo "CFG        : $(CFG_STRING)"
 	@echo "RTL_SRCS   : $(RTL_SRCS)"
 	@echo "BIN        : $(BIN)"
 	@echo "LD         : $(LINKER_DISPLAY)"
@@ -273,11 +305,18 @@ help:
 	@echo "Quick start:"
 	@echo "  make uvm_download        - clone uvm-verilator (once)"
 	@echo "  make smoke               - quick smoke run (74381)"
-	@echo "  make run DUT=<dut> TEST=<test> [N=<count>]"
+	@echo "  make run DUT=<dut> TEST=<test> [N=<count>] [COV=0|1]"
 	@echo ""
 	@echo "  DUT : 74381 | 74382 | 74381_16 | 74382_16"
 	@echo "  TEST: alu_smoke_test | alu_sanity_test | alu_ds_test |"
 	@echo "        alu_exhaustive_test | alu_random_test | alu_corner_test"
+	@echo ""
+	@echo "Compile-time config (alu_cfg_pkg, changing it rebuilds the DUT):"
+	@echo "  N=<n>        NUM_TRANSACTIONS   (random test vectors, default 1000)"
+	@echo "  SMOKE_N=<n>  SMOKE_TRANSACTIONS (smoke test vectors, default 20)"
+	@echo "  COV=0|1      COVERAGE_EN        (functional coverage, default 1)"
+	@echo "  XCHK=0|1     RFM_XCHECK_EN      (golden 16-bit cross-check, default 1)"
+	@echo "  SCB_LOG=<n>  SCB_MAX_LOG        (mismatch log cap, default 20)"
 	@echo ""
 	@echo "Regressions:"
 	@echo "  make test                - core suite (green in any defect state)"

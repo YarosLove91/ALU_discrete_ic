@@ -14,6 +14,7 @@
 package alu_test_pkg;
 
   import uvm_pkg::*;
+  import alu_cfg_pkg::*;
   import alu_tb_pkg::*;
   import alu_agent_pkg::*;
   import alu_seq_pkg::*;

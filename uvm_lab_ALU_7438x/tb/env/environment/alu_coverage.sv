@@ -56,15 +56,22 @@
     endfunction : new
 
     virtual function void write(alu_transaction t);
-      tr_c = t;
-      cg.sample();
+      if (COVERAGE_EN) begin
+        tr_c = t;
+        cg.sample();
+      end
     endfunction : write
 
     virtual function void report_phase(uvm_phase phase);
-      super.report_phase(phase);
-      `uvm_info({get_type_name(), ".REPORT"},
-                $sformatf("functional coverage: %.2f%%", cg.get_coverage()),
-                UVM_MEDIUM)
+        super.report_phase(phase);
+        if (!COVERAGE_EN) begin
+          `uvm_info({get_type_name(), ".REPORT"},
+              "functional coverage: DISABLED (COVERAGE_EN=0)", UVM_NONE)
+          return;
+        end
+        `uvm_info({get_type_name(), ".REPORT"},
+            $sformatf("functional coverage: %.2f%%", cg.get_coverage()),
+            UVM_NONE)
     endfunction : report_phase
 
   endclass : alu_coverage

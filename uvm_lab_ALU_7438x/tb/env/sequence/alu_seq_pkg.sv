@@ -13,8 +13,9 @@
 
 package alu_seq_pkg;
 
-import uvm_pkg::*;
-import alu_tb_pkg::*;
+  import uvm_pkg::*;
+  import alu_cfg_pkg::*;
+  import alu_tb_pkg::*;
 
   `include "uvm_macros.svh"
 
