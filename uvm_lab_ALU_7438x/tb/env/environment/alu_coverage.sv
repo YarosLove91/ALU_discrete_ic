@@ -61,7 +61,7 @@
 
     virtual function void write(alu_transaction t);
       if (!COVERAGE_EN) begin
-        return;  // coverage disabled via alu_cfg_pkg (+define+COVERAGE_EN=0)
+        return;  // coverage disabled via alu_cfg_pkg (COVERAGE_EN = 0)
       end
       tr_c = t;
       cg.sample();

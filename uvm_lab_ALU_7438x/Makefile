@@ -15,8 +15,9 @@ CXX      := g++
 #   TEST : alu_smoke_test | alu_sanity_test | alu_ds_test |
 #          alu_exhaustive_test | alu_random_test | alu_corner_test
 #
-# Compile-time configuration knobs (see the CFG_DEFINES block below):
-#   N, SMOKE_N, COV, XCHK, SCB_LOG
+# Testbench configuration = localparams in tb/alu_cfg_pkg.sv
+# (single source of truth); edit the file - the rebuild is
+# triggered automatically via the source dependency.
 # ------------------------------------------------------------
 DUT  ?= 74381
 TEST ?= alu_ds_test
@@ -25,30 +26,11 @@ VERBOSITY    ?= UVM_HIGH
 # +UVM_NO_RELNOTES suppresses the UVM release-notes banner
 SIM_PLUSARGS ?= +UVM_NO_RELNOTES
 
-# Compile-time knobs (alu_cfg_pkg). Defaults live ONLY in
-# tb/alu_cfg_pkg.sv (single source of truth); a +define+ is passed
-# solely when a knob is explicitly set (make N=5000 COV=0 ...).
-# Changing any knob rewrites .cfg_stamp and triggers a rebuild.
-CFG_DEFINES :=
-ifdef N
-  CFG_DEFINES += +define+NUM_TRANSACTIONS=$(N)
-endif
-ifdef SMOKE_N
-  CFG_DEFINES += +define+SMOKE_TRANSACTIONS=$(SMOKE_N)
-endif
-ifdef COV
-  CFG_DEFINES += +define+COVERAGE_EN=$(COV)
-endif
-ifdef XCHK
-  CFG_DEFINES += +define+RFM_XCHECK_EN=$(XCHK)
-endif
-ifdef SCB_LOG
-  CFG_DEFINES += +define+SCB_MAX_LOG=$(SCB_LOG)
-endif
-ifdef CPPREF
-  CFG_DEFINES += +define+USE_CPP_REF=$(CPPREF)
-endif
-CFG_STRING := DUT=$(DUT) N=$(N) SMOKE_N=$(SMOKE_N) COV=$(COV) XCHK=$(XCHK) SCB_LOG=$(SCB_LOG) CPPREF=$(CPPREF)
+# Legacy make knobs were replaced by alu_cfg_pkg.sv localparams.
+# Fail loudly so an old habit does not silently run a no-op.
+$(foreach K,N SMOKE_N COV XCHK SCB_LOG CPPREF,\
+  $(if $(filter-out undefined,$(origin $K)),\
+    $(error '$(K)=' is no longer a Makefile knob - edit the corresponding localparam in tb/alu_cfg_pkg.sv)))
 
 NUM_THREADS := $(shell nproc 2>/dev/null || echo 4)
 MAKEFLAGS += --no-print-directory
@@ -106,7 +88,7 @@ TB_ALL      := $(wildcard $(TB_DIR)/*.sv) $(wildcard $(RFM_DIR)/*.sv) \
                $(wildcard $(AGENT_DIR)/*.sv) $(wildcard $(SEQ_DIR)/*.sv) \
                $(wildcard $(ENV_DIR)/*.sv) $(wildcard $(TEST_DIR)/*.sv)
 
-# C++ golden model (DPI-C), selected by CPPREF=1 (USE_CPP_REF)
+# C++ golden model (DPI-C), activated by USE_CPP_REF in alu_cfg_pkg.sv
 RFM_CPP_SRC := $(RFM_DIR)/dpi/alu_golden_dpi.cpp
 
 # ------------------------------------------------------------
@@ -146,7 +128,6 @@ VFLAGS := \
 	-Wno-TIMESCALEMOD \
 	$(TRACE_FLAGS) \
 	+define+DUT_$(DUT) \
-	$(CFG_DEFINES) \
 	+incdir+$(UVM_DIR)/src \
 	+incdir+$(TB_DIR) \
 	+incdir+$(RFM_DIR) \
@@ -177,7 +158,7 @@ endef
 # ------------------------------------------------------------
 # Targets
 # ------------------------------------------------------------
-.PHONY: all build run smoke sanity help list clean distclean FORCE \
+.PHONY: all build run smoke sanity help list clean distclean \
         uvm_download waves \
         ds381 ds382 exh381 exh382 rand381 rand382 corner381 corner382 \
         rand381_16 rand382_16 ds381_16 ds382_16 \
@@ -200,20 +181,11 @@ $(UVM_MARKER):
 
 build: $(BIN)
 
-# Config stamp: rewrites (and thus triggers a rebuild) only when
-# the compile-time configuration actually changes
-CFG_STAMP := $(OUT_DIR)/.cfg_stamp
-
-$(CFG_STAMP): FORCE
-	@mkdir -p $(OUT_DIR)
-	@echo "$(CFG_STRING) TRACE=$(TRACE)" > $@.tmp
-	@if cmp -s $@.tmp $@ 2>/dev/null; then rm -f $@.tmp; else mv $@.tmp $@; fi
-
-FORCE:
-
-$(BIN): $(UVM_MARKER) $(TB_ALL) $(RTL_SRCS) $(CFG_STAMP) $(firstword $(MAKEFILE_LIST))
+# Config = localparams in tb/alu_cfg_pkg.sv; the package is part of
+# TB_ALL, so editing it retriggers the build automatically.
+$(BIN): $(UVM_MARKER) $(TB_ALL) $(RTL_SRCS) $(firstword $(MAKEFILE_LIST))
 	@mkdir -p $(OUT_DIR) $(LOG_DIR)
-	@echo ">>> [build] $(CFG_STRING) jobs=$(NUM_THREADS) ld=$(LINKER_DISPLAY)"
+	@echo ">>> [build] DUT=$(DUT) jobs=$(NUM_THREADS) ld=$(LINKER_DISPLAY)"
 	$(VERILATOR) $(VFLAGS) \
 		$(UVM_DIR)/src/uvm_pkg.sv \
 		$(TB_DIR)/alu_if.sv \
@@ -226,7 +198,7 @@ $(BIN): $(UVM_MARKER) $(TB_ALL) $(RTL_SRCS) $(CFG_STAMP) $(firstword $(MAKEFILE_
 
 run: build
 	@mkdir -p $(LOG_DIR)
-	@echo ">>> [run] DUT=$(DUT) TEST=$(TEST) cfg:$(if $(CFG_DEFINES),$(CFG_DEFINES), alu_cfg_pkg defaults)"
+	@echo ">>> [run] DUT=$(DUT) TEST=$(TEST)"
 	-$(BIN) +UVM_TESTNAME=$(TEST) \
 		+UVM_VERBOSITY=$(VERBOSITY) $(SIM_PLUSARGS) 2>&1 | tee $(LOG)
 	@if grep -q "LAB_RESULT: PASS" $(LOG); then \
@@ -264,13 +236,13 @@ exh382:
 	@$(MAKE) run DUT=74382 TEST=alu_exhaustive_test
 
 rand381:
-	@$(MAKE) run DUT=74381 TEST=alu_random_test N=$(N)
+	@$(MAKE) run DUT=74381 TEST=alu_random_test
 rand382:
-	@$(MAKE) run DUT=74382 TEST=alu_random_test N=$(N)
+	@$(MAKE) run DUT=74382 TEST=alu_random_test
 rand381_16:
-	@$(MAKE) run DUT=74381_16 TEST=alu_random_test N=$(N)
+	@$(MAKE) run DUT=74381_16 TEST=alu_random_test
 rand382_16:
-	@$(MAKE) run DUT=74382_16 TEST=alu_random_test N=$(N)
+	@$(MAKE) run DUT=74382_16 TEST=alu_random_test
 
 corner381:
 	@$(MAKE) run DUT=74381 TEST=alu_corner_test
@@ -310,7 +282,7 @@ distclean: clean
 list:
 	@echo "DUT        : $(DUT)"
 	@echo "TEST       : $(TEST)"
-	@echo "CFG        : $(CFG_STRING)"
+	@echo "CFG file   : $(TB_DIR)/alu_cfg_pkg.sv (edit localparams there)"
 	@echo "RTL_SRCS   : $(RTL_SRCS)"
 	@echo "BIN        : $(BIN)"
 	@echo "LD         : $(LINKER_DISPLAY)"
@@ -322,20 +294,16 @@ help:
 	@echo "Quick start:"
 	@echo "  make uvm_download        - clone uvm-verilator (once)"
 	@echo "  make smoke               - quick smoke run (74381)"
-	@echo "  make run DUT=<dut> TEST=<test> [N=<count>] [COV=0|1]"
+	@echo "  make run DUT=<dut> TEST=<test>"
 	@echo ""
 	@echo "  DUT : 74381 | 74382 | 74381_16 | 74382_16"
 	@echo "  TEST: alu_smoke_test | alu_sanity_test | alu_ds_test |"
 	@echo "        alu_exhaustive_test | alu_random_test | alu_corner_test"
 	@echo ""
-	@echo "Compile-time config (defaults: tb/alu_cfg_pkg.sv; set a knob to"
-	@echo "override it via +define+, changing any knob rebuilds the DUT):"
-	@echo "  N=<n>        NUM_TRANSACTIONS   (random test vectors)"
-	@echo "  SMOKE_N=<n>  SMOKE_TRANSACTIONS (smoke test vectors)"
-	@echo "  COV=0|1      COVERAGE_EN        (functional coverage)"
-	@echo "  XCHK=0|1     RFM_XCHECK_EN      (golden 16-bit cross-check)"
-	@echo "  SCB_LOG=<n>  SCB_MAX_LOG        (mismatch log cap)"
-	@echo "  CPPREF=0|1   USE_CPP_REF        (1 = C++ DPI golden model instead of SV)"
+	@echo "Configuration: edit localparams in tb/alu_cfg_pkg.sv (single"
+	@echo "source of truth; rebuild triggers automatically):"
+	@echo "  COVERAGE_EN, RFM_XCHECK_EN, SCB_MATCH_LOG_EN, USE_CPP_REF,"
+	@echo "  NUM_TRANSACTIONS, SMOKE_TRANSACTIONS, SCB_MAX_LOG"
 	@echo ""
 	@echo "Regressions:"
 	@echo "  make test                - core suite (green in any defect state)"
