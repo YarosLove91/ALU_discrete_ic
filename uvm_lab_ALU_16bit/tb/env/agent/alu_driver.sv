@@ -67,7 +67,7 @@
         vif.drv_cb.reg_write_addr   <= req.stim.ra1;
         vif.drv_cb.reg_write_data   <= req.stim.a;
         `uvm_info({get_type_name(), ".RF_WRITE"},
-                  $sformatf("[%0d] R%0d <= %04h", req.id, req.stim.ra1, req.stim.a),
+                  $sformatf("[%0d] R%0d <= %0h", req.id, req.stim.ra1, req.stim.a),
                   UVM_HIGH)
 
         // ---- phase 2: operand B -> R[ra2] (register path only) ----
@@ -76,7 +76,7 @@
           vif.drv_cb.reg_write_addr <= req.stim.ra2;
           vif.drv_cb.reg_write_data <= req.stim.b;
           `uvm_info({get_type_name(), ".RF_WRITE"},
-                    $sformatf("[%0d] R%0d <= %04h", req.id, req.stim.ra2, req.stim.b),
+                    $sformatf("[%0d] R%0d <= %0h", req.id, req.stim.ra2, req.stim.b),
                     UVM_HIGH)
         end
         else begin

@@ -28,15 +28,15 @@ class alu_scoreboard extends uvm_subscriber #(alu_transaction);
       string bad;
       bad = "";
       if (tr.act.result !== tr.exp.result) begin
-        bad = {bad, $sformatf(" result[dut=%04h exp=%04h]",
+        bad = {bad, $sformatf(" result[dut=%0h exp=%0h]",
             tr.act.result, tr.exp.result)};
       end
       if (tr.act.rdata1 !== tr.exp.rdata1) begin
-        bad = {bad, $sformatf(" RF1[dut=%04h exp=%04h]",
+        bad = {bad, $sformatf(" RF1[dut=%0h exp=%0h]",
             tr.act.rdata1, tr.exp.rdata1)};
       end
       if (tr.act.rdata2 !== tr.exp.rdata2) begin
-        bad = {bad, $sformatf(" RF2[dut=%04h exp=%04h]",
+        bad = {bad, $sformatf(" RF2[dut=%0h exp=%0h]",
             tr.act.rdata2, tr.exp.rdata2)};
       end
 

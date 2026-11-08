@@ -107,6 +107,12 @@ package alu_tb_pkg;
   int unsigned g_refmodel_errors = 0;
 
   // --------------------------------------------------------
+  // Custom UVM report server (installed by alu_base_test via
+  // uvm_report_server::set_server; uses the counters above)
+  // --------------------------------------------------------
+  `include "alu_report_server.sv"
+
+  // --------------------------------------------------------
   // Golden (reference) model of the alu16 result
   // --------------------------------------------------------
   `include "golden_alu16.sv"   // golden_alu16 (SV model, result)

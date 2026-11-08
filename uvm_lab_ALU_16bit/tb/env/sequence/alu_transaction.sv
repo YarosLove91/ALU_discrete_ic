@@ -38,13 +38,13 @@
     function string inputs2str();
         alu_op_e op;
         op = alu_op_e'({stim.mode, stim.sel});
-        return $sformatf("op=%-30s mode=%0b sel=%04b cin=%0b a=%04h b=%04h bsrc=%0b ra1=%0d ra2=%0d",
+        return $sformatf("op=%s mode=%0b sel=%0b cin=%0b a=%0h b=%0h bsrc=%0b ra1=%0d ra2=%0d",
             op.name(), stim.mode, stim.sel, stim.cin, stim.a, stim.b,
             stim.b_source, stim.ra1, stim.ra2);
     endfunction : inputs2str
 
     function string outputs2str();
-      return $sformatf("rdata1=%04h rdata2=%04h result=%04h cout=%0b nbo=%0b ngo=%0b",
+      return $sformatf("rdata1=%0h rdata2=%0h result=%0h cout=%0b nbo=%0b ngo=%0b",
           act.rdata1, act.rdata2, act.result, act.cout, act.nbo, act.ngo);
     endfunction : outputs2str
 

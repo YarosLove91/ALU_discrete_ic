@@ -21,7 +21,18 @@
     endfunction : new
 
     virtual function void build_phase(uvm_phase phase);
+      alu_report_server lab_srv;
       super.build_phase(phase);
+      // install the custom lab report server ("Application of
+      // custom UVM report server" pattern): error/fatal triage by
+      // message ID + lab verdict counters in the report summary;
+      // messages emitted before this point (elaboration banners)
+      // stay accounted by the default server
+      lab_srv = new("alu_report_server");
+      uvm_report_server::set_server(lab_srv);
+      `uvm_info({get_type_name(), ".REPORT_SERVER"},
+          "custom alu_report_server installed via uvm_report_server::set_server()",
+          UVM_HIGH)
       env_h = alu_env::type_id::create("env_h", this);
     endfunction : build_phase
 
