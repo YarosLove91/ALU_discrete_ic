@@ -21,14 +21,14 @@
       alu_transaction tr;
       tr = alu_transaction::type_id::create("tr");
       start_item(tr);
-      tr.a        = a;
-      tr.b        = b;
-      tr.cin      = cin;
-      tr.mode     = mode;
-      tr.sel      = sel;
-      tr.b_source = b_source;
-      tr.ra1      = ra1;
-      tr.ra2      = ra2;
+      tr.stim.a        = a;
+      tr.stim.b        = b;
+      tr.stim.cin      = cin;
+      tr.stim.mode     = mode;
+      tr.stim.sel      = sel;
+      tr.stim.b_source = b_source;
+      tr.stim.ra1      = ra1;
+      tr.stim.ra2      = ra2;
       finish_item(tr);
     endtask : send
 

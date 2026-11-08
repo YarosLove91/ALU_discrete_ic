@@ -10,7 +10,7 @@
 // it to the scoreboard.
 //
 // The prediction uses the effective operands sampled by the
-// monitor (tr.a = reg_read_data1, tr.b = b_source ? alu_b_imm :
+// monitor (tr.stim.a = reg_read_data1, tr.stim.b = b_source ? alu_b_imm :
 // reg_read_data2), i.e. the values actually presented to the ALU
 // inside cpu_top; the register file itself is checked separately
 // by the scoreboard echo comparison (exp_rdata1/2 from the
@@ -47,7 +47,7 @@
     // golden_alu16_sel switches between the SV and C++ DPI models
     // according to the USE_CPP_REF config bit (alu_cfg_pkg).
     function void predict(alu_transaction tr);
-      golden_alu16_sel(tr.a, tr.b, tr.cin, tr.mode, tr.sel, tr.exp_result);
+      golden_alu16_sel(tr.stim.a, tr.stim.b, tr.stim.cin, tr.stim.mode, tr.stim.sel, tr.exp.result);
       if (RFM_XCHECK_EN) begin
         xcheck_arith_16(tr);
       end
@@ -59,27 +59,27 @@
     function void xcheck_arith_16(alu_transaction tr);
       bit [16:0] sum;
       bit [16:0] diff;
-      if (tr.mode !== 1'b0) begin
+      if (tr.stim.mode !== 1'b0) begin
         return;
       end
-      if (tr.sel == 4'b1001) begin
+      if (tr.stim.sel == 4'b1001) begin
         // A PLUS B: result = a + b + ~cin (Cin active LOW)
-        sum = {1'b0, tr.a} + {1'b0, tr.b} + {16'b0, ~tr.cin};
-        if (tr.exp_result !== sum[15:0]) begin
+        sum = {1'b0, tr.stim.a} + {1'b0, tr.stim.b} + {16'b0, ~tr.stim.cin};
+        if (tr.exp.result !== sum[15:0]) begin
           g_refmodel_errors++;
           `uvm_error({get_type_name(), ".XCHK_SUM"},
               $sformatf("golden model self-check failed: %s | golden=%04h arithmetic=%04h",
-                  tr.inputs2str(), tr.exp_result, sum[15:0]))
+                  tr.inputs2str(), tr.exp.result, sum[15:0]))
         end
       end
-      else if (tr.sel == 4'b0110) begin
+      else if (tr.stim.sel == 4'b0110) begin
         // A MINUS B: result = a - b - cin (Cin active LOW)
-        diff = {1'b0, tr.a} - {1'b0, tr.b} - {16'b0, tr.cin};
-        if (tr.exp_result !== diff[15:0]) begin
+        diff = {1'b0, tr.stim.a} - {1'b0, tr.stim.b} - {16'b0, tr.stim.cin};
+        if (tr.exp.result !== diff[15:0]) begin
           g_refmodel_errors++;
           `uvm_error({get_type_name(), ".XCHK_DIFF"},
               $sformatf("golden model self-check failed: %s | golden=%04h arithmetic=%04h",
-                  tr.inputs2str(), tr.exp_result, diff[15:0]))
+                  tr.inputs2str(), tr.exp.result, diff[15:0]))
         end
       end
     endfunction : xcheck_arith_16

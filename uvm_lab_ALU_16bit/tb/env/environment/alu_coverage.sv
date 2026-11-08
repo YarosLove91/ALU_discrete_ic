@@ -24,20 +24,20 @@
     alu_transaction tr_c;
 
     covergroup cg;
-      cp_mode : coverpoint tr_c.mode;
-      cp_sel  : coverpoint tr_c.sel {
+      cp_mode : coverpoint tr_c.stim.mode;
+      cp_sel  : coverpoint tr_c.stim.sel {
         bins sel_[] = {[0 : 15]};
       }
-      cp_cin  : coverpoint tr_c.cin;
-      cp_bsrc : coverpoint tr_c.b_source;
-      cp_ra1  : coverpoint tr_c.ra1 {
+      cp_cin  : coverpoint tr_c.stim.cin;
+      cp_bsrc : coverpoint tr_c.stim.b_source;
+      cp_ra1  : coverpoint tr_c.stim.ra1 {
         bins reg_[] = {[0 : NUM_REGS - 1]};
       }
-      cp_ra2  : coverpoint tr_c.ra2 {
+      cp_ra2  : coverpoint tr_c.stim.ra2 {
         bins reg_[] = {[0 : NUM_REGS - 1]};
       }
 
-      cp_a : coverpoint tr_c.a {
+      cp_a : coverpoint tr_c.stim.a {
         bins zero     = {0};
         bins one      = {1};
         bins max_pos  = {MAX_POS};
@@ -46,7 +46,7 @@
         bins ones     = {ALL_ONES};
         bins mid      = default;
       }
-      cp_b : coverpoint tr_c.b {
+      cp_b : coverpoint tr_c.stim.b {
         bins zero     = {0};
         bins one      = {1};
         bins max_pos  = {MAX_POS};

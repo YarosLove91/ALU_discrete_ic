@@ -67,6 +67,34 @@ package alu_tb_pkg;
   typedef virtual alu_if alu_vif;
 
   // --------------------------------------------------------
+  // Transaction payload types (packed structs):
+  //   alu_stim_t - CPU-level stimulus set (driver -> DUT)
+  //   alu_outs_t - observed DUT output set; the transaction
+  //                keeps one instance for the actual values and
+  //                one for the expectations (act vs exp)
+  // --------------------------------------------------------
+  typedef struct packed {
+    bit [2:0]  ra2;       // operand B register address
+    bit [2:0]  ra1;       // operand A register address
+    bit        b_source;  // operand B source: 0 = R[ra2], 1 = immediate
+    bit [3:0]  sel;       // function select
+    bit        mode;      // 0 = arithmetic, 1 = logic
+    bit        cin;       // carry in (active LOW)
+    bit [15:0] b;         // operand B (R[ra2] write / alu_b_imm)
+    bit [15:0] a;         // operand A (R[ra1] write)
+  } alu_stim_t;
+
+  typedef struct packed {
+    bit        ngo;       // 74182 group generate (active LOW)
+    bit        nbo;       // 74182 group propagate (active LOW)
+    bit        cout;      // ALU carry out (active LOW)
+    bit [15:0] result;    // ALU result
+    bit [15:0] b_imm;     // sampled immediate operand
+    bit [15:0] rdata2;    // operand B presented to the ALU
+    bit [15:0] rdata1;    // operand A presented to the ALU
+  } alu_outs_t;
+
+  // --------------------------------------------------------
   // Global verdict counters (a teaching simplification; a
   // production env would use uvm_report_server / config_db)
   // --------------------------------------------------------

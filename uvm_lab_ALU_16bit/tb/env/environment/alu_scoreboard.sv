@@ -27,17 +27,17 @@ class alu_scoreboard extends uvm_subscriber #(alu_transaction);
     virtual function void write(alu_transaction tr);
       string bad;
       bad = "";
-      if (tr.result !== tr.exp_result) begin
+      if (tr.act.result !== tr.exp.result) begin
         bad = {bad, $sformatf(" result[dut=%04h exp=%04h]",
-            tr.result, tr.exp_result)};
+            tr.act.result, tr.exp.result)};
       end
-      if (tr.rdata1 !== tr.exp_rdata1) begin
+      if (tr.act.rdata1 !== tr.exp.rdata1) begin
         bad = {bad, $sformatf(" RF1[dut=%04h exp=%04h]",
-            tr.rdata1, tr.exp_rdata1)};
+            tr.act.rdata1, tr.exp.rdata1)};
       end
-      if (tr.rdata2 !== tr.exp_rdata2) begin
+      if (tr.act.rdata2 !== tr.exp.rdata2) begin
         bad = {bad, $sformatf(" RF2[dut=%04h exp=%04h]",
-            tr.rdata2, tr.exp_rdata2)};
+            tr.act.rdata2, tr.exp.rdata2)};
       end
 
       g_scb_checked++;

@@ -25,9 +25,9 @@
         tr = alu_transaction::type_id::create("tr");
         start_item(tr);
         if (!tr.randomize() with {
-                a dist { 0 := 10, ALL_ONES := 10, [1 : ALL_ONES - 1] :/ 80 };
-                b dist { 0 := 10, ALL_ONES := 10, [1 : ALL_ONES - 1] :/ 80 };
-                ra1 != ra2;
+                stim.a dist { 0 := 10, ALL_ONES := 10, [1 : ALL_ONES - 1] :/ 80 };
+                stim.b dist { 0 := 10, ALL_ONES := 10, [1 : ALL_ONES - 1] :/ 80 };
+                stim.ra1 != stim.ra2;
             }) begin
             `uvm_fatal("ALU_RANDOM_SEQ.RANDOMIZE", "randomize() failed")
         end

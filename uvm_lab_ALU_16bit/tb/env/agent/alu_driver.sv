@@ -64,19 +64,19 @@
         // ---- phase 1: operand A -> R[ra1] ----
         @(vif.drv_cb);
         vif.drv_cb.reg_write_enable <= 1'b1;
-        vif.drv_cb.reg_write_addr   <= req.ra1;
-        vif.drv_cb.reg_write_data   <= req.a;
+        vif.drv_cb.reg_write_addr   <= req.stim.ra1;
+        vif.drv_cb.reg_write_data   <= req.stim.a;
         `uvm_info({get_type_name(), ".RF_WRITE"},
-                  $sformatf("[%0d] R%0d <= %04h", req.id, req.ra1, req.a),
+                  $sformatf("[%0d] R%0d <= %04h", req.id, req.stim.ra1, req.stim.a),
                   UVM_HIGH)
 
         // ---- phase 2: operand B -> R[ra2] (register path only) ----
         @(vif.drv_cb);
-        if (req.b_source == 1'b0) begin
-          vif.drv_cb.reg_write_addr <= req.ra2;
-          vif.drv_cb.reg_write_data <= req.b;
+        if (req.stim.b_source == 1'b0) begin
+          vif.drv_cb.reg_write_addr <= req.stim.ra2;
+          vif.drv_cb.reg_write_data <= req.stim.b;
           `uvm_info({get_type_name(), ".RF_WRITE"},
-                    $sformatf("[%0d] R%0d <= %04h", req.id, req.ra2, req.b),
+                    $sformatf("[%0d] R%0d <= %04h", req.id, req.stim.ra2, req.stim.b),
                     UVM_HIGH)
         end
         else begin
@@ -86,13 +86,13 @@
         // ---- phase 3: op phase - controls + valid ----
         @(vif.drv_cb);
         vif.drv_cb.reg_write_enable <= 1'b0;
-        vif.drv_cb.reg_read_addr1   <= req.ra1;
-        vif.drv_cb.reg_read_addr2   <= req.ra2;
-        vif.drv_cb.alu_cin          <= req.cin;
-        vif.drv_cb.alu_mode         <= req.mode;
-        vif.drv_cb.alu_comm         <= req.sel;
-        vif.drv_cb.b_source_sel     <= req.b_source;
-        vif.drv_cb.alu_b_imm        <= req.b;
+        vif.drv_cb.reg_read_addr1   <= req.stim.ra1;
+        vif.drv_cb.reg_read_addr2   <= req.stim.ra2;
+        vif.drv_cb.alu_cin          <= req.stim.cin;
+        vif.drv_cb.alu_mode         <= req.stim.mode;
+        vif.drv_cb.alu_comm         <= req.stim.sel;
+        vif.drv_cb.b_source_sel     <= req.stim.b_source;
+        vif.drv_cb.alu_b_imm        <= req.stim.b;
         vif.drv_cb.valid            <= 1'b1;
         `uvm_info({get_type_name(), ".DRIVE"},
                   $sformatf("[%0d] driving %s", req.id, req.inputs2str()),

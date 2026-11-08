@@ -54,25 +54,25 @@
           // ---- sample the qualified pair first (pre-edge values) ----
           if (vif.mon_cb.valid === 1'b1) begin
             tr = alu_transaction::type_id::create("tr");
-            tr.cin       = vif.mon_cb.alu_cin;
-            tr.mode      = vif.mon_cb.alu_mode;
-            tr.sel       = vif.mon_cb.alu_comm;
-            tr.b_source  = vif.mon_cb.b_source_sel;
-            tr.ra1       = vif.mon_cb.reg_read_addr1;
-            tr.ra2       = vif.mon_cb.reg_read_addr2;
-            tr.b_imm     = vif.mon_cb.alu_b_imm;
-            tr.rdata1    = vif.mon_cb.reg_read_data1;
-            tr.rdata2    = vif.mon_cb.reg_read_data2;
-            tr.result    = vif.mon_cb.alu_result;
-            tr.cout      = vif.mon_cb.alu_cout;
-            tr.nbo       = vif.mon_cb.alu_nbo;
-            tr.ngo       = vif.mon_cb.alu_ngo;
+            tr.stim.cin      = vif.mon_cb.alu_cin;
+            tr.stim.mode     = vif.mon_cb.alu_mode;
+            tr.stim.sel      = vif.mon_cb.alu_comm;
+            tr.stim.b_source = vif.mon_cb.b_source_sel;
+            tr.stim.ra1      = vif.mon_cb.reg_read_addr1;
+            tr.stim.ra2      = vif.mon_cb.reg_read_addr2;
+            tr.act.b_imm     = vif.mon_cb.alu_b_imm;
+            tr.act.rdata1    = vif.mon_cb.reg_read_data1;
+            tr.act.rdata2    = vif.mon_cb.reg_read_data2;
+            tr.act.result    = vif.mon_cb.alu_result;
+            tr.act.cout      = vif.mon_cb.alu_cout;
+            tr.act.nbo       = vif.mon_cb.alu_nbo;
+            tr.act.ngo       = vif.mon_cb.alu_ngo;
             // shadow expectations (state before this edge's write)
-            tr.exp_rdata1 = rf_shadow[vif.mon_cb.reg_read_addr1];
-            tr.exp_rdata2 = rf_shadow[vif.mon_cb.reg_read_addr2];
+            tr.exp.rdata1    = rf_shadow[vif.mon_cb.reg_read_addr1];
+            tr.exp.rdata2    = rf_shadow[vif.mon_cb.reg_read_addr2];
             // effective operands actually presented to the ALU
-            tr.a = tr.rdata1;
-            tr.b = tr.b_source ? tr.b_imm : tr.rdata2;
+            tr.stim.a        = tr.act.rdata1;
+            tr.stim.b        = tr.stim.b_source ? tr.act.b_imm : tr.act.rdata2;
             `uvm_info({get_type_name(), ".SAMPLED"},
                       $sformatf("sampled %s | %s",
                                 tr.inputs2str(), tr.outputs2str()),
