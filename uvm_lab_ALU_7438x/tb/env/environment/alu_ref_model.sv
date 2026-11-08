@@ -35,11 +35,13 @@
       end
     endtask : run_phase
 
-    // Fill the exp_* fields of the transaction from its inputs
+    // Fill the exp_* fields of the transaction from its inputs.
+    // golden_*_sel switch between the SV and C++ DPI models
+    // according to the USE_CPP_REF config bit (alu_cfg_pkg).
     function void predict(alu_transaction tr);
       case (DUT_KIND)
         DUT_381_4: begin
-            golden_381 (tr.a[3:0],
+            golden_381_sel (tr.a[3:0],
                         tr.b[3:0],
                         tr.cn,
                         tr.s,
@@ -48,7 +50,7 @@
                         tr.exp_g);
         end
         DUT_382_4: begin
-            golden_382 (tr.a[3:0],
+            golden_382_sel (tr.a[3:0],
                         tr.b[3:0],
                         tr.cn,
                         tr.s,
@@ -57,13 +59,13 @@
                         tr.exp_cn4);
         end
         DUT_381_16: begin
-          golden_381_w16(tr.a, tr.b, tr.cn, tr.s, tr.exp_f, tr.exp_cn4);
+          golden_381_w16_sel(tr.a, tr.b, tr.cn, tr.s, tr.exp_f, tr.exp_cn4);
           if (RFM_XCHECK_EN) begin
             xcheck_arith_16(tr);
           end
         end
         DUT_382_16: begin
-          golden_382_w16(tr.a, tr.b, tr.cn, tr.s, tr.exp_f, tr.exp_ovr, tr.exp_cn4);
+          golden_382_w16_sel(tr.a, tr.b, tr.cn, tr.s, tr.exp_f, tr.exp_ovr, tr.exp_cn4);
           if (RFM_XCHECK_EN) begin
               xcheck_arith_16(tr);
           end

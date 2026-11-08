@@ -13,6 +13,7 @@
 //   COVERAGE_EN      - functional coverage collection/report
 //   RFM_XCHECK_EN    - 16-bit golden-model cross-check
 //   SCB_MATCH_LOG_EN - per-match UVM_HIGH scoreboard logging
+//   USE_CPP_REF      - golden model: 0 = SV (default), 1 = C++ DPI-C
 // Numeric knobs:
 //   NUM_TRANSACTIONS   - alu_random_test vector count
 //   SMOKE_TRANSACTIONS - alu_smoke_test vector count
@@ -68,6 +69,13 @@ package alu_cfg_pkg;
   `define SCB_MATCH_LOG_EN 1
 `endif
   localparam bit SCB_MATCH_LOG_EN = `SCB_MATCH_LOG_EN;
+
+  // Golden model selection: 0 = SystemVerilog model (default),
+  // 1 = C++ model via DPI-C (tb/ref_model/dpi/alu_golden_dpi.cpp)
+`ifndef USE_CPP_REF
+  `define USE_CPP_REF 0
+`endif
+  localparam bit USE_CPP_REF = `USE_CPP_REF;
 
   // --------------------------------------------------------
   // Numeric knobs

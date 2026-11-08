@@ -45,7 +45,10 @@ endif
 ifdef SCB_LOG
   CFG_DEFINES += +define+SCB_MAX_LOG=$(SCB_LOG)
 endif
-CFG_STRING := DUT=$(DUT) N=$(N) SMOKE_N=$(SMOKE_N) COV=$(COV) XCHK=$(XCHK) SCB_LOG=$(SCB_LOG)
+ifdef CPPREF
+  CFG_DEFINES += +define+USE_CPP_REF=$(CPPREF)
+endif
+CFG_STRING := DUT=$(DUT) N=$(N) SMOKE_N=$(SMOKE_N) COV=$(COV) XCHK=$(XCHK) SCB_LOG=$(SCB_LOG) CPPREF=$(CPPREF)
 
 NUM_THREADS := $(shell nproc 2>/dev/null || echo 4)
 MAKEFLAGS += --no-print-directory
@@ -99,8 +102,12 @@ TB_PKG_SRCS := $(TB_DIR)/alu_cfg_pkg.sv \
                $(ENV_DIR)/alu_env_pkg.sv \
                $(TEST_DIR)/alu_test_pkg.sv
 TB_ALL      := $(wildcard $(TB_DIR)/*.sv) $(wildcard $(RFM_DIR)/*.sv) \
+               $(wildcard $(RFM_DIR)/dpi/*.cpp) \
                $(wildcard $(AGENT_DIR)/*.sv) $(wildcard $(SEQ_DIR)/*.sv) \
                $(wildcard $(ENV_DIR)/*.sv) $(wildcard $(TEST_DIR)/*.sv)
+
+# C++ golden model (DPI-C), selected by CPPREF=1 (USE_CPP_REF)
+RFM_CPP_SRC := $(RFM_DIR)/dpi/alu_golden_dpi.cpp
 
 # ------------------------------------------------------------
 # Linker auto-detection: mold -> lld -> gold -> system default
@@ -213,6 +220,7 @@ $(BIN): $(UVM_MARKER) $(TB_ALL) $(RTL_SRCS) $(CFG_STAMP) $(firstword $(MAKEFILE_
 		$(RTL_SRCS) \
 		$(TB_PKG_SRCS) \
 		$(TB_DIR)/alu_tb_top.sv \
+		$(RFM_CPP_SRC) \
 		$(UVM_DPI_SRC) \
 		-CFLAGS "-std=c++17"
 
@@ -327,6 +335,7 @@ help:
 	@echo "  COV=0|1      COVERAGE_EN        (functional coverage)"
 	@echo "  XCHK=0|1     RFM_XCHECK_EN      (golden 16-bit cross-check)"
 	@echo "  SCB_LOG=<n>  SCB_MAX_LOG        (mismatch log cap)"
+	@echo "  CPPREF=0|1   USE_CPP_REF        (1 = C++ DPI golden model instead of SV)"
 	@echo ""
 	@echo "Regressions:"
 	@echo "  make test                - core suite (green in any defect state)"

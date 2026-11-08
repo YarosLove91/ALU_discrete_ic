@@ -54,7 +54,8 @@ package alu_tb_pkg;
   `include "alu_ds_tables.sv"   // ds_row_t, ds381_row, ds382_row
   `include "golden_381.sv"      // golden_381, golden_381_w16
   `include "golden_382.sv"      // golden_382, golden_382_w16
-  `include "golden_sanity.sv"   // run_golden_sanity (self-check)
+  `include "golden_dpi.sv"      // DPI-C imports + golden_*_sel model selectors
+  `include "golden_sanity.sv"   // run_golden_sanity (self-check of BOTH models)
 
 endpackage : alu_tb_pkg
 

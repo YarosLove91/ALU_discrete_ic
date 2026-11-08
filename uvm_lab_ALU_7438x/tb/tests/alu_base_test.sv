@@ -27,8 +27,8 @@
 
     virtual task run_phase(uvm_phase phase);
       `uvm_info({get_type_name(), ".START"},
-          $sformatf("starting test: DUT=%s W=%0d cfg: COVERAGE_EN=%0b RFM_XCHECK_EN=%0b NUM_TRANSACTIONS=%0d",
-              DUT_KIND.name(), W, COVERAGE_EN, RFM_XCHECK_EN, NUM_TRANSACTIONS),
+          $sformatf("starting test: DUT=%s W=%0d cfg: COVERAGE_EN=%0b RFM_XCHECK_EN=%0b USE_CPP_REF=%0b NUM_TRANSACTIONS=%0d",
+              DUT_KIND.name(), W, COVERAGE_EN, RFM_XCHECK_EN, USE_CPP_REF, NUM_TRANSACTIONS),
           UVM_HIGH)
       phase.raise_objection(this);
       body_seq();
