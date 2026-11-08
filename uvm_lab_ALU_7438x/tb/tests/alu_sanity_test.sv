@@ -20,13 +20,13 @@
     virtual task body_seq();
       `uvm_info({get_type_name(), ".GOLDEN_CHECK"},
                 "self-checking golden_381/golden_382 against the 74F381/74F382 datasheet truth tables...",
-                UVM_NONE)
+                UVM_HIGH)
       run_golden_sanity();
       if (g_sanity_errors == 0) begin
         `uvm_info({get_type_name(), ".DONE"},
                   $sformatf("golden models match the datasheets: %0d checks, 0 errors",
                             g_sanity_checks),
-                  UVM_NONE)
+                  UVM_HIGH)
       end
       else begin
         `uvm_error ({get_type_name(), ".DONE"},

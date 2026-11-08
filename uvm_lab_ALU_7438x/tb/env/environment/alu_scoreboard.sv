@@ -83,7 +83,7 @@ class alu_scoreboard extends uvm_subscriber #(alu_transaction);
       `uvm_info({get_type_name(), ".SUMMARY"},
                 $sformatf("transactions checked: %0d | matched: %0d | mismatches: %0d",
                           g_scb_checked, g_scb_matches, g_scb_mismatches),
-                UVM_NONE)
+                UVM_HIGH)
     endfunction : report_phase
 
   endclass : alu_scoreboard

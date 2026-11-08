@@ -10,6 +10,10 @@
 //               (0, 1, MAX_POS, MIN_NEG, ALL_ONES, others)
 //   crosses op x cn and op x a x b
 // Coverage is printed in report_phase; the lab target is 100%.
+// Gated by the COVERAGE_EN config bit (alu_cfg_pkg) at two levels:
+// alu_env does not create/connect the collector when it is 0, and
+// the internal guards below skip sampling and print DISABLED if the
+// component is created anyway (e.g. via factory override).
 // ============================================================
   class alu_coverage extends uvm_subscriber #(alu_transaction);
     `uvm_component_utils(alu_coverage)
@@ -56,22 +60,23 @@
     endfunction : new
 
     virtual function void write(alu_transaction t);
-      if (COVERAGE_EN) begin
-        tr_c = t;
-        cg.sample();
+      if (!COVERAGE_EN) begin
+        return;  // coverage disabled via alu_cfg_pkg (+define+COVERAGE_EN=0)
       end
+      tr_c = t;
+      cg.sample();
     endfunction : write
 
     virtual function void report_phase(uvm_phase phase);
         super.report_phase(phase);
         if (!COVERAGE_EN) begin
           `uvm_info({get_type_name(), ".REPORT"},
-              "functional coverage: DISABLED (COVERAGE_EN=0)", UVM_NONE)
+                    "functional coverage: DISABLED (COVERAGE_EN=0)", UVM_HIGH)
           return;
         end
         `uvm_info({get_type_name(), ".REPORT"},
-            $sformatf("functional coverage: %.2f%%", cg.get_coverage()),
-            UVM_NONE)
+                  $sformatf("functional coverage: %.2f%%", cg.get_coverage()),
+                  UVM_HIGH)
     endfunction : report_phase
 
   endclass : alu_coverage

@@ -27,6 +27,8 @@
       agt    = alu_agent::type_id::create("agt", this);
       rfm    = alu_ref_model::type_id::create("rfm", this);
       scb    = alu_scoreboard::type_id::create("scb", this);
+      // COVERAGE_EN=0: collector is not created at all;
+      // alu_coverage additionally honors the bit internally
       if (COVERAGE_EN) begin
         cov = alu_coverage::type_id::create("cov", this);
       end

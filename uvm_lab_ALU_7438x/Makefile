@@ -15,32 +15,37 @@ CXX      := g++
 #   TEST : alu_smoke_test | alu_sanity_test | alu_ds_test |
 #          alu_exhaustive_test | alu_random_test | alu_corner_test
 #
-# Compile-time configuration (alu_cfg_pkg knobs, passed as
-# +define+<NAME>=<value>; changing any of them rebuilds the DUT):
-#   N        -> NUM_TRANSACTIONS   (alu_random_test vectors)
-#   SMOKE_N  -> SMOKE_TRANSACTIONS (alu_smoke_test vectors)
-#   COV      -> COVERAGE_EN        (1/0 functional coverage)
-#   XCHK     -> RFM_XCHECK_EN      (1/0 golden 16-bit cross-check)
-#   SCB_LOG  -> SCB_MAX_LOG        (detailed mismatch log cap)
+# Compile-time configuration knobs (see the CFG_DEFINES block below):
+#   N, SMOKE_N, COV, XCHK, SCB_LOG
 # ------------------------------------------------------------
 DUT  ?= 74381
 TEST ?= alu_ds_test
-N        ?= 1000
-SMOKE_N  ?= 20
-COV      ?= 1
-XCHK     ?= 1
-SCB_LOG  ?= 20
-VERBOSITY    ?= UVM_MEDIUM
+VERBOSITY    ?= UVM_HIGH
 # Additional simulation plusargs (override: make SIM_PLUSARGS="...")
 # +UVM_NO_RELNOTES suppresses the UVM release-notes banner
 SIM_PLUSARGS ?= +UVM_NO_RELNOTES
 
-CFG_DEFINES := +define+NUM_TRANSACTIONS=$(N) \
-               +define+SMOKE_TRANSACTIONS=$(SMOKE_N) \
-               +define+COVERAGE_EN=$(COV) \
-               +define+RFM_XCHECK_EN=$(XCHK) \
-               +define+SCB_MAX_LOG=$(SCB_LOG)
-CFG_STRING  := DUT=$(DUT) N=$(N) SMOKE_N=$(SMOKE_N) COV=$(COV) XCHK=$(XCHK) SCB_LOG=$(SCB_LOG)
+# Compile-time knobs (alu_cfg_pkg). Defaults live ONLY in
+# tb/alu_cfg_pkg.sv (single source of truth); a +define+ is passed
+# solely when a knob is explicitly set (make N=5000 COV=0 ...).
+# Changing any knob rewrites .cfg_stamp and triggers a rebuild.
+CFG_DEFINES :=
+ifdef N
+  CFG_DEFINES += +define+NUM_TRANSACTIONS=$(N)
+endif
+ifdef SMOKE_N
+  CFG_DEFINES += +define+SMOKE_TRANSACTIONS=$(SMOKE_N)
+endif
+ifdef COV
+  CFG_DEFINES += +define+COVERAGE_EN=$(COV)
+endif
+ifdef XCHK
+  CFG_DEFINES += +define+RFM_XCHECK_EN=$(XCHK)
+endif
+ifdef SCB_LOG
+  CFG_DEFINES += +define+SCB_MAX_LOG=$(SCB_LOG)
+endif
+CFG_STRING := DUT=$(DUT) N=$(N) SMOKE_N=$(SMOKE_N) COV=$(COV) XCHK=$(XCHK) SCB_LOG=$(SCB_LOG)
 
 NUM_THREADS := $(shell nproc 2>/dev/null || echo 4)
 MAKEFLAGS += --no-print-directory
@@ -171,6 +176,10 @@ endef
         rand381_16 rand382_16 ds381_16 ds382_16 \
         test hunt test_all
 
+# Regression targets fan out to sub-makes sharing one OUT_DIR per DUT;
+# serialize to avoid concurrent Verilator builds into the same --Mdir
+.NOTPARALLEL:
+
 all: run
 
 uvm_download: $(UVM_MARKER)
@@ -209,7 +218,7 @@ $(BIN): $(UVM_MARKER) $(TB_ALL) $(RTL_SRCS) $(CFG_STAMP) $(firstword $(MAKEFILE_
 
 run: build
 	@mkdir -p $(LOG_DIR)
-	@echo ">>> [run] DUT=$(DUT) TEST=$(TEST) N=$(N) COV=$(COV)"
+	@echo ">>> [run] DUT=$(DUT) TEST=$(TEST) cfg:$(if $(CFG_DEFINES),$(CFG_DEFINES), alu_cfg_pkg defaults)"
 	-$(BIN) +UVM_TESTNAME=$(TEST) \
 		+UVM_VERBOSITY=$(VERBOSITY) $(SIM_PLUSARGS) 2>&1 | tee $(LOG)
 	@if grep -q "LAB_RESULT: PASS" $(LOG); then \
@@ -223,7 +232,7 @@ run: build
 
 # single run with VCD dump (TRACE=1 rebuilds into a separate dir)
 waves:
-	@$(MAKE) run TRACE=1 VERBOSITY=UVM_HIGH
+	@$(MAKE) run TRACE=1
 	@echo ">>> Waves: $(LOG_DIR)/waves.vcd (gtkwave $(LOG_DIR)/waves.vcd)"
 
 # ------------------------------------------------------------
@@ -261,7 +270,7 @@ corner382:
 	@$(MAKE) run DUT=74382 TEST=alu_corner_test
 
 smoke:
-	@$(MAKE) run DUT=74381 TEST=alu_smoke_test VERBOSITY=UVM_HIGH
+	@$(MAKE) run DUT=74381 TEST=alu_smoke_test
 
 # ------------------------------------------------------------
 # Regressions
@@ -311,12 +320,13 @@ help:
 	@echo "  TEST: alu_smoke_test | alu_sanity_test | alu_ds_test |"
 	@echo "        alu_exhaustive_test | alu_random_test | alu_corner_test"
 	@echo ""
-	@echo "Compile-time config (alu_cfg_pkg, changing it rebuilds the DUT):"
-	@echo "  N=<n>        NUM_TRANSACTIONS   (random test vectors, default 1000)"
-	@echo "  SMOKE_N=<n>  SMOKE_TRANSACTIONS (smoke test vectors, default 20)"
-	@echo "  COV=0|1      COVERAGE_EN        (functional coverage, default 1)"
-	@echo "  XCHK=0|1     RFM_XCHECK_EN      (golden 16-bit cross-check, default 1)"
-	@echo "  SCB_LOG=<n>  SCB_MAX_LOG        (mismatch log cap, default 20)"
+	@echo "Compile-time config (defaults: tb/alu_cfg_pkg.sv; set a knob to"
+	@echo "override it via +define+, changing any knob rebuilds the DUT):"
+	@echo "  N=<n>        NUM_TRANSACTIONS   (random test vectors)"
+	@echo "  SMOKE_N=<n>  SMOKE_TRANSACTIONS (smoke test vectors)"
+	@echo "  COV=0|1      COVERAGE_EN        (functional coverage)"
+	@echo "  XCHK=0|1     RFM_XCHECK_EN      (golden 16-bit cross-check)"
+	@echo "  SCB_LOG=<n>  SCB_MAX_LOG        (mismatch log cap)"
 	@echo ""
 	@echo "Regressions:"
 	@echo "  make test                - core suite (green in any defect state)"
