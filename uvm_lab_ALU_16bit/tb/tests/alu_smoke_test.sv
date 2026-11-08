@@ -5,8 +5,10 @@
 // ------------------------------------------------------------
 // Smoke test (lab stage 0): SMOKE_TRANSACTIONS random vectors
 // (alu_cfg_pkg, default 20) to prove the environment is alive
-// end-to-end (driver -> DUT -> monitor -> refmodel ->
-// scoreboard). Default test of run_test() in alu_tb_top.
+// end-to-end (vseq -> seq -> driver -> DUT -> monitor ->
+// refmodel -> scoreboard). The virtual sequence runs on the env
+// virtual sequencer (Sunburst Design pattern). Default test of
+// run_test() in alu_tb_top.
 // ============================================================
 
   class alu_smoke_test extends alu_base_test;
@@ -17,10 +19,10 @@
     endfunction : new
 
     virtual task body_seq();
-      alu_random_seq seq;
-      seq = alu_random_seq::type_id::create("seq");
-      seq.num_items = SMOKE_TRANSACTIONS;  // alu_cfg_pkg (override: make SMOKE_N=<count>)
-      seq.start(env_h.agt.sqr);
+      alu_random_vseq vseq;
+      vseq = alu_random_vseq::type_id::create("vseq");
+      vseq.num_items = SMOKE_TRANSACTIONS;  // alu_cfg_pkg (override: make SMOKE_N=<count>)
+      vseq.start(env_h.v_sqr);
     endtask : body_seq
 
   endclass : alu_smoke_test

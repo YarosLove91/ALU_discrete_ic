@@ -18,10 +18,10 @@
     endfunction : new
 
     virtual task body_seq();
-      alu_random_seq seq;
-      seq = alu_random_seq::type_id::create("seq");
-      seq.num_items = NUM_TRANSACTIONS;  // alu_cfg_pkg (override: make N=<count>)
-      seq.start(env_h.agt.sqr);
+      alu_random_vseq vseq;
+      vseq = alu_random_vseq::type_id::create("vseq");
+      vseq.num_items = NUM_TRANSACTIONS;  // alu_cfg_pkg (override: make N=<count>)
+      vseq.start(env_h.v_sqr);
     endtask : body_seq
 
   endclass : alu_random_test
