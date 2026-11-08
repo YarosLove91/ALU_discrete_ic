@@ -4,9 +4,15 @@
 // Project : UVM verification lab for 74381/74382 ALUs (Verilator)
 // ------------------------------------------------------------
 // Compile-time configuration package (head of the dependency
-// chain). Single source of truth for all testbench knobs:
-// edit the localparam values below - the Makefile rebuilds the
-// DUT automatically (the package is a build dependency).
+// chain).
+//
+// Each knob has TWO configuration channels:
+//   1. default - the literal in the `else branch below
+//      (edit it in this file; rebuild triggers automatically);
+//   2. override - from the Makefile without editing any file:
+//        make rand381 N=5000 COV=0 CPPREF=1 ...
+//      the Makefile passes +define+ALU_CFG_<NAME>=<value> only
+//      for knobs explicitly set on the command line.
 //
 // Feature bits (1 = enabled, 0 = disabled):
 //   COVERAGE_EN      - functional coverage collection/report
@@ -19,9 +25,9 @@
 //   SMOKE_TRANSACTIONS - alu_smoke_test vector count
 //   SCB_MAX_LOG        - detailed mismatch log cap
 //
-// Only the DUT selection stays conditional-compilation based:
-// it is structural - tb/alu_tb_top.sv instantiates different
-// RTL under the same +define+DUT_<...> passed by the Makefile.
+// Only the DUT selection stays purely conditional-compilation
+// based: it is structural - tb/alu_tb_top.sv instantiates
+// different RTL under the same +define+DUT_<...>.
 // ============================================================
 `ifndef ALU_CFG_PKG_SV
 `define ALU_CFG_PKG_SV
@@ -57,19 +63,52 @@ package alu_cfg_pkg;
   localparam bit         FAM_382  = (DUT_KIND == DUT_382_4) || (DUT_KIND == DUT_382_16);
 
   // --------------------------------------------------------
-  // Feature config bits (edit the values here)
+  // Feature config bits
   // --------------------------------------------------------
-  localparam bit COVERAGE_EN      = 1'b1;  // functional coverage collector
-  localparam bit RFM_XCHECK_EN    = 1'b1;  // 16-bit golden-model cross-check
+`ifdef ALU_CFG_COVERAGE_EN
+  localparam bit COVERAGE_EN = `ALU_CFG_COVERAGE_EN;
+`else
+  localparam bit COVERAGE_EN = 1'b1;  // functional coverage collector
+`endif
+
+`ifdef ALU_CFG_RFM_XCHECK_EN
+  localparam bit RFM_XCHECK_EN = `ALU_CFG_RFM_XCHECK_EN;
+`else
+  localparam bit RFM_XCHECK_EN = 1'b1;  // 16-bit golden-model cross-check
+`endif
+
+`ifdef ALU_CFG_SCB_MATCH_LOG_EN
+  localparam bit SCB_MATCH_LOG_EN = `ALU_CFG_SCB_MATCH_LOG_EN;
+`else
   localparam bit SCB_MATCH_LOG_EN = 1'b1;  // per-match scoreboard logging
-  localparam bit USE_CPP_REF      = 1'b0;  // 0 = SV golden, 1 = C++ DPI golden
+`endif
+
+`ifdef ALU_CFG_USE_CPP_REF
+  localparam bit USE_CPP_REF = `ALU_CFG_USE_CPP_REF;
+`else
+  localparam bit USE_CPP_REF = 1'b0;  // 0 = SV golden, 1 = C++ DPI golden
+`endif
 
   // --------------------------------------------------------
-  // Numeric knobs (edit the values here)
+  // Numeric knobs
   // --------------------------------------------------------
-  localparam int unsigned NUM_TRANSACTIONS   = 1000;  // alu_random_test vectors
-  localparam int unsigned SMOKE_TRANSACTIONS = 20;    // alu_smoke_test vectors
-  localparam int unsigned SCB_MAX_LOG        = 20;    // mismatch log cap
+`ifdef ALU_CFG_NUM_TRANSACTIONS
+  localparam int unsigned NUM_TRANSACTIONS = `ALU_CFG_NUM_TRANSACTIONS;
+`else
+  localparam int unsigned NUM_TRANSACTIONS = 1000;  // alu_random_test vectors
+`endif
+
+`ifdef ALU_CFG_SMOKE_TRANSACTIONS
+  localparam int unsigned SMOKE_TRANSACTIONS = `ALU_CFG_SMOKE_TRANSACTIONS;
+`else
+  localparam int unsigned SMOKE_TRANSACTIONS = 20;  // alu_smoke_test vectors
+`endif
+
+`ifdef ALU_CFG_SCB_MAX_LOG
+  localparam int unsigned SCB_MAX_LOG = `ALU_CFG_SCB_MAX_LOG;
+`else
+  localparam int unsigned SCB_MAX_LOG = 20;  // detailed mismatch log cap
+`endif
 
 endpackage : alu_cfg_pkg
 

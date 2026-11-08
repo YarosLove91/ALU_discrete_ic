@@ -15,9 +15,16 @@ CXX      := g++
 #   TEST : alu_smoke_test | alu_sanity_test | alu_ds_test |
 #          alu_exhaustive_test | alu_random_test | alu_corner_test
 #
-# Testbench configuration = localparams in tb/alu_cfg_pkg.sv
-# (single source of truth); edit the file - the rebuild is
-# triggered automatically via the source dependency.
+# Configuration knobs (override the localparam defaults from
+# tb/alu_cfg_pkg.sv; passed as +define+ALU_CFG_<NAME>=<value>
+# only when set explicitly, any change triggers a rebuild):
+#   N        -> NUM_TRANSACTIONS    (alu_random_test vectors)
+#   SMOKE_N  -> SMOKE_TRANSACTIONS  (alu_smoke_test vectors)
+#   COV      -> COVERAGE_EN         (1/0 functional coverage)
+#   XCHK     -> RFM_XCHECK_EN       (1/0 golden 16-bit cross-check)
+#   SCB_LOG  -> SCB_MAX_LOG         (detailed mismatch log cap)
+#   MATCH_LOG-> SCB_MATCH_LOG_EN    (1/0 per-match scoreboard log)
+#   CPPREF   -> USE_CPP_REF         (1 = C++ DPI golden, 0 = SV)
 # ------------------------------------------------------------
 DUT  ?= 74381
 TEST ?= alu_ds_test
@@ -26,11 +33,29 @@ VERBOSITY    ?= UVM_HIGH
 # +UVM_NO_RELNOTES suppresses the UVM release-notes banner
 SIM_PLUSARGS ?= +UVM_NO_RELNOTES
 
-# Legacy make knobs were replaced by alu_cfg_pkg.sv localparams.
-# Fail loudly so an old habit does not silently run a no-op.
-$(foreach K,N SMOKE_N COV XCHK SCB_LOG CPPREF,\
-  $(if $(filter-out undefined,$(origin $K)),\
-    $(error '$(K)=' is no longer a Makefile knob - edit the corresponding localparam in tb/alu_cfg_pkg.sv)))
+CFG_DEFINES :=
+ifdef N
+  CFG_DEFINES += +define+ALU_CFG_NUM_TRANSACTIONS=$(N)
+endif
+ifdef SMOKE_N
+  CFG_DEFINES += +define+ALU_CFG_SMOKE_TRANSACTIONS=$(SMOKE_N)
+endif
+ifdef COV
+  CFG_DEFINES += +define+ALU_CFG_COVERAGE_EN=$(COV)
+endif
+ifdef XCHK
+  CFG_DEFINES += +define+ALU_CFG_RFM_XCHECK_EN=$(XCHK)
+endif
+ifdef SCB_LOG
+  CFG_DEFINES += +define+ALU_CFG_SCB_MAX_LOG=$(SCB_LOG)
+endif
+ifdef MATCH_LOG
+  CFG_DEFINES += +define+ALU_CFG_SCB_MATCH_LOG_EN=$(MATCH_LOG)
+endif
+ifdef CPPREF
+  CFG_DEFINES += +define+ALU_CFG_USE_CPP_REF=$(CPPREF)
+endif
+CFG_STRING := DUT=$(DUT) N=$(N) SMOKE_N=$(SMOKE_N) COV=$(COV) XCHK=$(XCHK) SCB_LOG=$(SCB_LOG) MATCH_LOG=$(MATCH_LOG) CPPREF=$(CPPREF)
 
 NUM_THREADS := $(shell nproc 2>/dev/null || echo 4)
 MAKEFLAGS += --no-print-directory
@@ -128,6 +153,7 @@ VFLAGS := \
 	-Wno-TIMESCALEMOD \
 	$(TRACE_FLAGS) \
 	+define+DUT_$(DUT) \
+	$(CFG_DEFINES) \
 	+incdir+$(UVM_DIR)/src \
 	+incdir+$(TB_DIR) \
 	+incdir+$(RFM_DIR) \
@@ -158,7 +184,7 @@ endef
 # ------------------------------------------------------------
 # Targets
 # ------------------------------------------------------------
-.PHONY: all build run smoke sanity help list clean distclean \
+.PHONY: all build run smoke sanity help list clean distclean FORCE \
         uvm_download waves \
         ds381 ds382 exh381 exh382 rand381 rand382 corner381 corner382 \
         rand381_16 rand382_16 ds381_16 ds382_16 \
@@ -181,11 +207,21 @@ $(UVM_MARKER):
 
 build: $(BIN)
 
-# Config = localparams in tb/alu_cfg_pkg.sv; the package is part of
-# TB_ALL, so editing it retriggers the build automatically.
-$(BIN): $(UVM_MARKER) $(TB_ALL) $(RTL_SRCS) $(firstword $(MAKEFILE_LIST))
+# Config stamp: rewritten (triggering a rebuild) only when the
+# effective knob set changes; file edits to alu_cfg_pkg.sv are
+# covered by the TB_ALL dependency
+CFG_STAMP := $(OUT_DIR)/.cfg_stamp
+
+$(CFG_STAMP): FORCE
+	@mkdir -p $(OUT_DIR)
+	@echo "$(CFG_STRING) TRACE=$(TRACE)" > $@.tmp
+	@if cmp -s $@.tmp $@ 2>/dev/null; then rm -f $@.tmp; else mv $@.tmp $@; fi
+
+FORCE:
+
+$(BIN): $(UVM_MARKER) $(TB_ALL) $(RTL_SRCS) $(CFG_STAMP) $(firstword $(MAKEFILE_LIST))
 	@mkdir -p $(OUT_DIR) $(LOG_DIR)
-	@echo ">>> [build] DUT=$(DUT) jobs=$(NUM_THREADS) ld=$(LINKER_DISPLAY)"
+	@echo ">>> [build] $(CFG_STRING) jobs=$(NUM_THREADS) ld=$(LINKER_DISPLAY)"
 	$(VERILATOR) $(VFLAGS) \
 		$(UVM_DIR)/src/uvm_pkg.sv \
 		$(TB_DIR)/alu_if.sv \
@@ -198,7 +234,7 @@ $(BIN): $(UVM_MARKER) $(TB_ALL) $(RTL_SRCS) $(firstword $(MAKEFILE_LIST))
 
 run: build
 	@mkdir -p $(LOG_DIR)
-	@echo ">>> [run] DUT=$(DUT) TEST=$(TEST)"
+	@echo ">>> [run] DUT=$(DUT) TEST=$(TEST) cfg:$(if $(strip $(CFG_DEFINES)), $(CFG_DEFINES), alu_cfg_pkg defaults)"
 	-$(BIN) +UVM_TESTNAME=$(TEST) \
 		+UVM_VERBOSITY=$(VERBOSITY) $(SIM_PLUSARGS) 2>&1 | tee $(LOG)
 	@if grep -q "LAB_RESULT: PASS" $(LOG); then \
@@ -282,7 +318,7 @@ distclean: clean
 list:
 	@echo "DUT        : $(DUT)"
 	@echo "TEST       : $(TEST)"
-	@echo "CFG file   : $(TB_DIR)/alu_cfg_pkg.sv (edit localparams there)"
+	@echo "CFG        : $(CFG_STRING)"
 	@echo "RTL_SRCS   : $(RTL_SRCS)"
 	@echo "BIN        : $(BIN)"
 	@echo "LD         : $(LINKER_DISPLAY)"
@@ -294,16 +330,21 @@ help:
 	@echo "Quick start:"
 	@echo "  make uvm_download        - clone uvm-verilator (once)"
 	@echo "  make smoke               - quick smoke run (74381)"
-	@echo "  make run DUT=<dut> TEST=<test>"
+	@echo "  make run DUT=<dut> TEST=<test> [N=<count>] [COV=0|1] [CPPREF=0|1]"
 	@echo ""
 	@echo "  DUT : 74381 | 74382 | 74381_16 | 74382_16"
 	@echo "  TEST: alu_smoke_test | alu_sanity_test | alu_ds_test |"
 	@echo "        alu_exhaustive_test | alu_random_test | alu_corner_test"
 	@echo ""
-	@echo "Configuration: edit localparams in tb/alu_cfg_pkg.sv (single"
-	@echo "source of truth; rebuild triggers automatically):"
-	@echo "  COVERAGE_EN, RFM_XCHECK_EN, SCB_MATCH_LOG_EN, USE_CPP_REF,"
-	@echo "  NUM_TRANSACTIONS, SMOKE_TRANSACTIONS, SCB_MAX_LOG"
+	@echo "Configuration knobs (override localparam defaults from"
+	@echo "tb/alu_cfg_pkg.sv; unset knobs use the file defaults):"
+	@echo "  N=<n>        NUM_TRANSACTIONS    (random test vectors)"
+	@echo "  SMOKE_N=<n>  SMOKE_TRANSACTIONS  (smoke test vectors)"
+	@echo "  COV=0|1      COVERAGE_EN         (functional coverage)"
+	@echo "  XCHK=0|1     RFM_XCHECK_EN       (golden 16-bit cross-check)"
+	@echo "  SCB_LOG=<n>  SCB_MAX_LOG         (mismatch log cap)"
+	@echo "  MATCH_LOG=0|1 SCB_MATCH_LOG_EN   (per-match scoreboard log)"
+	@echo "  CPPREF=0|1   USE_CPP_REF         (1 = C++ DPI golden model)"
 	@echo ""
 	@echo "Regressions:"
 	@echo "  make test                - core suite (green in any defect state)"

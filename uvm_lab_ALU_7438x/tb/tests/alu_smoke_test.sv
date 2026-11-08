@@ -19,7 +19,7 @@
     virtual task body_seq();
       alu_random_seq seq;
       seq = alu_random_seq::type_id::create("seq");
-      seq.num_items = SMOKE_TRANSACTIONS;  // localparam from alu_cfg_pkg.sv
+      seq.num_items = SMOKE_TRANSACTIONS;  // alu_cfg_pkg (override: make SMOKE_N=<count>)
       seq.start(env_h.agt.sqr);
     endtask : body_seq
 

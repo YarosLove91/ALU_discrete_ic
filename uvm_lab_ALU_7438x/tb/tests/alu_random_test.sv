@@ -4,9 +4,10 @@
 // Project : UVM verification lab for 74381/74382 ALUs (Verilator)
 // ------------------------------------------------------------
 // Constrained-random stress test: NUM_TRANSACTIONS vectors
-// (localparam in tb/alu_cfg_pkg.sv, default 1000 - edit the file
-// to change) with corner-weighted operand distribution (0 and
-// ALL_ONES at 10% each). Reproducible via +verilator+seed+<N>.
+// (alu_cfg_pkg: default 1000 in the file, override via
+// make N=<count>) with corner-weighted operand distribution
+// (0 and ALL_ONES at 10% each). Reproducible via
+// +verilator+seed+<N>.
 // ============================================================
 
   class alu_random_test extends alu_base_test;
@@ -19,7 +20,7 @@
     virtual task body_seq();
       alu_random_seq seq;
       seq = alu_random_seq::type_id::create("seq");
-      seq.num_items = NUM_TRANSACTIONS;  // localparam from alu_cfg_pkg.sv
+      seq.num_items = NUM_TRANSACTIONS;  // alu_cfg_pkg (override: make N=<count>)
       seq.start(env_h.agt.sqr);
     endtask : body_seq
 
