@@ -105,6 +105,9 @@ package alu_tb_pkg;
   int unsigned g_sanity_checks   = 0;
   int unsigned g_sanity_errors   = 0;
   int unsigned g_refmodel_errors = 0;
+  // functional coverage percent published by alu_coverage in
+  // report_phase for the report server summary; < 0 = disabled
+  real g_cov_percent = -1.0;
 
   // --------------------------------------------------------
   // Custom UVM report server (installed by alu_base_test via

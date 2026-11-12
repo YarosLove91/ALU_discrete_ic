@@ -12,7 +12,9 @@
 //                       (0, 1, MAX_POS, MIN_NEG, ALL_ONES-1,
 //                        ALL_ONES, others)
 //   crosses: func (mode x sel), func x cin, func x bsrc, a x b
-// Coverage is printed in report_phase; the lab target is 100%.
+// Coverage is printed in report_phase and published to the
+// g_cov_percent global (alu_tb_pkg) for the report server
+// summary; the lab target is 100%.
 // Gated by the COVERAGE_EN config bit (alu_cfg_pkg) at two levels:
 // alu_env does not create/connect the collector when it is 0, and
 // the internal guards below skip sampling and print DISABLED if the
@@ -82,8 +84,10 @@
                     "functional coverage: DISABLED (COVERAGE_EN=0)", UVM_HIGH)
           return;
         end
+        // publish for the alu_report_server summary (g_cov_percent)
+        g_cov_percent = cg.get_coverage();
         `uvm_info({get_type_name(), ".REPORT"},
-                  $sformatf("functional coverage: %.2f%%", cg.get_coverage()),
+                  $sformatf("functional coverage: %.2f%%", g_cov_percent),
                   UVM_HIGH)
     endfunction : report_phase
 
