@@ -1,0 +1,27 @@
+# ---- Verilator artifacts ----
+uvm_out/*
+obj_dir/
+*.vcd
+*.fst
+
+# LOGs
+logs/
+*.log
+*.xml
+
+# ---- UVM lib ----
+uvm-verilator/
+.uvm_downloaded
+
+# ---- Coverage ----
+coverage.dat
+*.dat.dir
+*.info
+annotated/
+
+# ---- GTKWave ----
+*.gtkw
+
+# ---- Python ----
+__pycache__/
+*.pyc

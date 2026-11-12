@@ -25,6 +25,14 @@
 // server, exactly like in the Cookbook recipe. Plain text only -
 // ANSI color is reserved for the Makefile runtime verdicts
 // (lab rule: logs must stay greppable).
+//
+// Optional structured XML log (SNUG 2013, sections 5-6): with
+// +ALU_XML_LOG=<path> (or bare +ALU_XML_LOG -> alu_log.xml) every
+// processed message is additionally written as a <msg> element
+// with all meta-data (verbosity/severity/file/line/id/time/
+// context) to a separate file, while stdout stays plain text.
+// The file is consumed by tools/alu_log_viewer.py (interactive
+// filtering / reformatting without re-running the simulation).
 // ============================================================
 
   class alu_report_server extends uvm_default_report_server;
@@ -39,9 +47,87 @@
     // message histogram by verbosity (all severities)
     protected int    verb_count[int];
 
+    // optional structured XML log (SNUG 2013): 0 = disabled
+    protected int    xml_handle = 0;
+
+    // characters that are invalid XML data and have to be encoded
+    protected string xml_replacements[string] = '{
+        "<" : "&lt;", "&" : "&amp;", ">" : "&gt;",
+        "'" : "&apos;", "\"" : "&quot;"
+    };
+
     function new(string name = "alu_report_server");
+      string xml_path;
       super.new(name);
+      if ($value$plusargs("ALU_XML_LOG=%s", xml_path)) begin
+        open_xml_log(xml_path);
+      end else if ($test$plusargs("ALU_XML_LOG")) begin
+        open_xml_log("alu_log.xml");
+      end
     endfunction : new
+
+    // Open the XML log and write the document header (the paper
+    // uses report_header; here the file is server-private)
+    protected function void open_xml_log(string path);
+      xml_handle = $fopen(path, "w");
+      if (xml_handle == 0) begin
+        `uvm_warning("ALU/REPORT/SERVER",
+            $sformatf("cannot open XML log '%s' - XML logging disabled", path))
+        return;
+      end
+      f_display(xml_handle,
+          "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<log>\n");
+    endfunction : open_xml_log
+
+    // Replace reserved XML characters (backwards scan keeps the
+    // inserted entities intact; SNUG 2013 sanitize pattern)
+    protected function string xml_sanitize(string data);
+      string ch;
+      for (int i = data.len()-1; i >= 0; i--) begin
+        ch = data.substr(i, i);
+        if (xml_replacements.exists(ch)) begin
+          data = {data.substr(0, i-1), xml_replacements[ch],
+                  data.substr(i+1, data.len()-1)};
+        end
+      end
+      xml_sanitize = data;
+    endfunction : xml_sanitize
+
+    // XML attribute: tag="data" (empty data -> no attribute)
+    protected function string xla(string tag, string data);
+      xla = "";
+      if (data != "") begin
+        xla = {" ", tag, "=\"", xml_sanitize(data), "\""};
+      end
+    endfunction : xla
+
+    // XML element: <tag attributes>data</tag>
+    protected function string xle(string tag, string data,
+        string attributes = "");
+      xle = "";
+      if (data != "") begin
+        xle = {"<", tag, attributes, ">", xml_sanitize(data),
+               "</", tag, ">\n"};
+      end
+    endfunction : xle
+
+    // One <msg> element with the full message meta-data
+    protected function void write_xml_message(uvm_report_message rm);
+      string time_str;
+      string context_str;
+      uvm_report_handler rh;
+      time_str = $sformatf("%0t", $realtime);
+      rh = rm.get_report_handler();
+      context_str = (rh != null) ? rh.get_full_name() : "";
+      f_display(xml_handle, xle("msg", rm.get_message(),
+          {xla("verbosity", $sformatf("%0d", rm.get_verbosity())),
+           xla("severity", rm.get_severity().name()),
+           xla("file", rm.get_filename()),
+           xla("line", $sformatf("%0d", rm.get_line())),
+           xla("id", rm.get_id()),
+           xla("time", time_str),
+           xla("context", context_str)}));
+    endfunction : write_xml_message
 
     // Account error/fatal messages per ID, histogram verbosities,
     // then hand the message over to the default server
@@ -75,6 +161,9 @@
         end
       end
       super.process_report_message(report_message);
+      if (xml_handle != 0) begin
+        write_xml_message(report_message);
+      end
     endfunction : process_report_message
 
     // Verbosity value -> enum name (UVM_NONE..UVM_DEBUG) or number
@@ -188,6 +277,14 @@
         foreach (q[i]) begin
           f_display(file, q[i]);
         end
+      end
+
+      // close the XML document last, so the summary messages
+      // themselves are captured as <msg> elements too
+      if (xml_handle != 0) begin
+        f_display(xml_handle, "</log>\n");
+        $fclose(xml_handle);
+        xml_handle = 0;
       end
     endfunction : summarize
 

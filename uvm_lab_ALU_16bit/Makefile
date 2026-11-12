@@ -26,6 +26,8 @@ CXX      := g++
 #   SCB_LOG  -> SCB_MAX_LOG         (detailed mismatch log cap)
 #   MATCH_LOG-> SCB_MATCH_LOG_EN    (1/0 per-match scoreboard log)
 #   CPPREF   -> USE_CPP_REF         (1 = C++ DPI golden, 0 = SV)
+#   XML_LOG  -> +ALU_XML_LOG=<path> (structured XML log for the
+#              tools/alu_log_viewer.py GUI/CLI viewer)
 # ------------------------------------------------------------
 DUT  := cpu_top
 TEST ?= alu_smoke_test
@@ -33,6 +35,13 @@ VERBOSITY    ?= UVM_HIGH
 # Additional simulation plusargs (override: make SIM_PLUSARGS="...")
 # +UVM_NO_RELNOTES suppresses the UVM release-notes banner
 SIM_PLUSARGS ?= +UVM_NO_RELNOTES
+
+# Structured XML log (SNUG 2013 pattern) for tools/alu_log_viewer.py:
+#   make run XML_LOG=logs/alu_log.xml   - write the XML log
+#   make viewer XML_LOG=logs/alu_log.xml - open it in the GUI viewer
+ifdef XML_LOG
+  SIM_PLUSARGS += +ALU_XML_LOG=$(XML_LOG)
+endif
 
 CFG_DEFINES :=
 ifdef N
@@ -182,7 +191,7 @@ endef
 # Targets
 # ------------------------------------------------------------
 .PHONY: all build run smoke rand help list clean distclean FORCE \
-        uvm_download waves test
+        uvm_download waves test viewer
 
 # Regression targets fan out to sub-makes sharing one OUT_DIR;
 # serialize to avoid concurrent Verilator builds into the same --Mdir
@@ -245,6 +254,10 @@ waves:
 	@$(MAKE) run TRACE=1
 	@echo ">>> Waves: $(LOG_DIR)/waves.vcd (gtkwave $(LOG_DIR)/waves.vcd)"
 
+# interactive XML log viewer (SNUG 2013): run first with XML_LOG=...
+viewer:
+	python3 tools/alu_log_viewer.py $(if $(XML_LOG),$(XML_LOG),$(LOG_DIR)/alu_log.xml)
+
 # ------------------------------------------------------------
 # Single runs
 # ------------------------------------------------------------
@@ -303,5 +316,7 @@ help:
 	@echo ""
 	@echo "Misc:"
 	@echo "  make waves TEST=...      - run with VCD dump (logs/waves.vcd)"
+	@echo "  make run XML_LOG=<path>  - also write a structured XML log"
+	@echo "  make viewer XML_LOG=<path> - XML log GUI viewer (SNUG 2013)"
 	@echo "  make list                - print variables"
 	@echo "  make clean / distclean   - cleanup (distclean removes uvm-verilator)"
