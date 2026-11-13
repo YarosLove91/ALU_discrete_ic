@@ -56,6 +56,7 @@ VERILATOR_FLAGS += --assert
 VERILATOR_FLAGS += --coverage
 
 VERILATOR_FLAGS += --trace
+VERILATOR_FLAGS += -CFLAGS "-I$(CURDIR)"
 VERILATOR_FLAGS += -j $(NUM_THREADS)
 # Run make to compile model, with as many CPUs as are free
 VERILATOR_FLAGS += --build -j
@@ -66,9 +67,11 @@ VERILATOR_FLAGS += --build -j
 
 VERILATOR_INPUT ?=
 # Input files for Verilator
-VERILATOR_INPUT = alu_16_bit.v 
+PROJ_ROOT := $(CURDIR)/../../..
+RTL_DIR   := $(PROJ_ROOT)/rtl
+VERILATOR_INPUT = $(RTL_DIR)/top/alu_16_bit.v
+VERILATOR_INPUT += $(RTL_DIR)/src/alu_74381.v
 VERILATOR_INPUT += main.cpp
-VERILATOR_INPUT += ../alu_74381.v 
 
 ######################################################################
 VERILATOR_COV_FLAGS ?=

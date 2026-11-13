@@ -25,5 +25,5 @@ module fulladd4(
 
     // Групповые сигналы Propagate и Generate для всего блока
     assign nGP = ~(&p);
-    assign nGG = ~(g[3] | (p[3] & g[2]) | (p[3:2] & g[1]) | (&p[3:1] & g[0]));
+    assign nGG = ~(g[3] | (p[3] & g[2]) | (p[3] & p[2] & g[1]) | (&p[3:1] & g[0]));
 endmodule

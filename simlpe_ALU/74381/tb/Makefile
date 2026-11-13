@@ -64,7 +64,10 @@ VERILATOR_FLAGS += --build -j
 
 VERILATOR_INPUT ?=
 # Input files for Verilator
-VERILATOR_INPUT = alu_74381.v main.cpp
+PROJ_ROOT := $(CURDIR)/..
+RTL_DIR   := $(PROJ_ROOT)/rtl
+TB_DIR    := $(PROJ_ROOT)/tb/tb_verilator
+VERILATOR_INPUT = $(RTL_DIR)/src/alu_74381.v $(TB_DIR)/ALU_4bit/main.cpp
 
 ######################################################################
 VERILATOR_COV_FLAGS ?=

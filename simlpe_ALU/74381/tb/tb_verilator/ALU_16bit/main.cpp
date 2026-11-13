@@ -1,4 +1,9 @@
 #include <test.h>
+#include <iostream>
+#include <fstream>
+using std::cout;
+using std::cerr;
+using std::endl;
 
 int a_plus_b_test(	Valu_16_bit* alu_16_bit, 
 					int& num_failed, 

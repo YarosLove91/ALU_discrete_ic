@@ -1,17 +1,40 @@
 # ---- Артефакты сборки Verilator ----
 obj_*/
 obj_dir/
+alu_74381/
+alu_16_bit/
 *.vcd
 *.fst
 *.dmp
 *.vpd
 
 # ---- Логи и покрытия ----
+logs/
 *.log
 *.dat
 *.dat.dir
 coverage.info
 annotated/
 
+# ---- Сгенерированные тестовые векторы ----
+simlpe_ALU/74382/tb/*.txt
+simlpe_ALU/74382/tb/generate
+
+# ---- UVM-лабы ----
+uvm_out/
+uvm-verilator/
+.cfg_stamp
+*.xml
+
+# ---- Python ----
+__pycache__/
+*.pyc
+
 # ---- GTKWave ----
 *.gtkw
+
+# ---- Прочее ----
+*.o
+*.a
+*.so
+core

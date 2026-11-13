@@ -51,29 +51,29 @@ module alu_74381 (
 		`OPERATION_A_XOR_B:
 		begin
 			F = A ^ B;
-			if(A == 0 & B == 4'b1111)	
+			if(A == 0 & B == 4'b1111)
 			begin
 				P_int = 0;
+			end else begin
+				P_int = A | B;
 			end
-		else
-			P_int = A | B;
 			G_int = (A) & B;
 		end
 		`OPERATION_A_OR_B:
 		begin
 			F = A | B;
-			if((A == 4'b1111) & (B == 4'b1111))	
+			if((A == 4'b1111) & (B == 4'b1111))
 			begin
 				P_int = 4'b1111;
+			end else begin
+				P_int = 4'b0000;
 			end
-		else
-			P_int = 4'b0000;
 			G_int = 4'b0000;
 		end
 		`OPERATION_A_AND_B:
 		begin
 			F = A & B;
-			if(((A == 4'b0000) & (B == 4'b0000)) || ((A == 4'b1111) & (B == 4'b0000)) )	
+			if(((A == 4'b0000) & (B == 4'b0000)) || ((A == 4'b1111) & (B == 4'b0000)) )
 			begin
 				P_int = 4'b1111;
 				G_int = 4'b1111;
@@ -94,13 +94,17 @@ module alu_74381 (
 			if((A == 4'b1111) & (B == 4'b1111))
 			begin
 				P_int = 4'b1111;
-			end
-			else
+			end	else begin
 				P_int = 4'b0000;
-				G_int = 4'b0000;
+			end
+			G_int = 4'b0000;
 		end
 		default:
+		begin
 			F = 4'b0000;
+			P_int = 4'b1111;
+			G_int = 4'b1111;
+		end
 	endcase
 	end
 

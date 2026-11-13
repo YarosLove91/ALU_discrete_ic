@@ -6,10 +6,11 @@ module alu32(
     output Cout, nBo, nGo
 );
 
-    wire [3:0] ic_carry, unused_carry;
+    wire [3:0] ic_carry;
     wire [7:0] nGG,nGP;
     wire [7:0] carry_local;
 
+    /* verilator lint_off PINMISSING */
     genvar i;
     generate
         for (i = 0; i < 8; i = i + 1) begin : alu_gen
@@ -26,7 +27,7 @@ module alu32(
         end
     endgenerate
 
-    carry32_n74882 carry32 (
+    cla32_n74882 carry32 (
         .nP(nGP),      // Пропускные сигналы
         .nG(nGG),      // Генерирующие сигналы
         .Cin(Cin),           // Входной перенос
@@ -37,6 +38,16 @@ module alu32(
     );
 
     assign Cout = ic_carry[3];
+
+    assign nBo = &nGP;
+    assign nGo = (&nGG) |
+                 (&nGG[7:1] & nGP[1]) |
+                 (&nGG[7:2] & nGP[2]) |
+                 (&nGG[7:3] & nGP[3]) |
+                 (&nGG[7:4] & nGP[4]) |
+                 (&nGG[7:5] & nGP[5]) |
+                 (&nGG[7:6] & nGP[6]) |
+                 (nGG[7] & nGP[7]);
 endmodule
 
 //.Cin(i == 0 ? Cin : (i % 2 == 1) ? carry_local[i/2] : ic_carry[(i/2)-1]),		// работает

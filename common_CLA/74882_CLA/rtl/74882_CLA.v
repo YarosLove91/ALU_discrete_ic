@@ -69,7 +69,7 @@ module carry32_p74882 (
 					 ( PG[3]) | 
 					 ( PP[3] & G[1]) | 
 					 ( PP[3] & PG[1]) | 
-					 ( PP[3] & PP[1] & ~Cin));
+					 ( PP[3] & PP[1] & Cin));
 
 	assign Cout[2] = ((G[5]) |
 					 ( PG[5]) | 
@@ -77,7 +77,7 @@ module carry32_p74882 (
 					 ( PP[5] & PG[3]) | 
 					 ( PP[5] & PP[3] & G[1]) |
 					 ( PP[5] & PP[3] & PG[1]) | 
-					 ( PP[5] & PP[3] & PP[1] & ~Cin));
+					 ( PP[5] & PP[3] & PP[1] & Cin));
 	
 	assign Cout[3] = ((G[7]) | 
 					 ( PG[7])| 
@@ -87,6 +87,6 @@ module carry32_p74882 (
 					 ( PP[7] & PP[5] & PG[3])| 
 					 ( PP[7] & PP[5] & PP[3] & G[1]) | 
 					 ( PP[7] & PP[5] & PP[3] & PG[1])| 
-					 ( PP[7] & PP[5] & PP[3] & PP[1] & ~Cin));
+					 ( PP[7] & PP[5] & PP[3] & PP[1] & Cin));
 
 endmodule
