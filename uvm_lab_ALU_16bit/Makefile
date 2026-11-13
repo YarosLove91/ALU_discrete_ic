@@ -78,7 +78,7 @@ MAKEFLAGS += --no-print-directory
 RTL_ROOT := $(CURDIR)/..
 DUT_DIR  := $(CURDIR)/DUT
 RTL_181  := $(RTL_ROOT)/classic_ALU/src_common/74181.v
-RTL_182  := $(RTL_ROOT)/common_CLA/74182_CLA/74182_CLA.v
+RTL_182  := $(RTL_ROOT)/common_CLA/74182_CLA/rtl/74182_CLA.v
 DUT_TOP  := $(DUT_DIR)/simple_CPU_top.v
 
 RTL_SRCS := $(RTL_181) $(RTL_182) $(DUT_DIR)/top_alu_16.sv \

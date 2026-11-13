@@ -5,7 +5,7 @@
 // ------------------------------------------------------------
 // C++ golden (reference) model, called from SystemVerilog via
 // DPI-C. Table-driven design after the student work
-// classic_ALU/74181_16bit/tb_verilator/tb_alu_16.cpp
+// classic_ALU/74181_16bit/tb/tb_verilator/tb_alu_16.cpp
 // (operation tables as std::function lambdas).
 //
 // Model selection is done on the SV side by the USE_CPP_REF

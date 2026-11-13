@@ -7,7 +7,7 @@
 // included into alu_tb_pkg.
 //
 // Source of semantics: the validated operation tables of the
-// student C++ testbench classic_ALU/74181_16bit/tb_verilator/
+// student C++ testbench classic_ALU/74181_16bit/tb/tb_verilator/
 // tb_alu_16.cpp (logic_operations, math_operations_STRUCT and
 // carry_correction_p). The model computes the 16-bit result
 // directly, in unsigned 16-bit arithmetic with natural wrap.

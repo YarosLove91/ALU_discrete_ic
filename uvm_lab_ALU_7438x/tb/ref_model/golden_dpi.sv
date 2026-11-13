@@ -4,7 +4,7 @@
 // Project : UVM verification lab for 74381/74382 ALUs (Verilator)
 // ------------------------------------------------------------
 // DPI-C bridge to the C++ golden model (dpi/alu_golden_dpi.cpp,
-// table-driven after classic_ALU/74181_16bit/tb_verilator/
+// table-driven after classic_ALU/74181_16bit/tb/tb_verilator/
 // tb_alu_16.cpp) and model-selection wrappers.
 //
 // Layers:
