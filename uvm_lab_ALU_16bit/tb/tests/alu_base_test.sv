@@ -5,9 +5,10 @@
 // ------------------------------------------------------------
 // Abstract base test: builds the environment, runs the
 // test-specific sequence (body_seq), drains the pipeline,
-// prints the final LAB_RESULT verdict consumed by the Makefile
-// and returns a non-zero exit code on failure ($fatal, with the
-// report summary forced beforehand so the triage table is kept).
+// reports the final LAB_RESULT verdict consumed by the Makefile
+// (uvm_info on PASS) and returns a non-zero exit code on failure
+// (uvm_fatal, which forces the report summary so the triage table
+// is kept).
 // ============================================================
 
   virtual class alu_base_test extends uvm_test;
@@ -65,16 +66,17 @@
         (!require_dut_checks || g_scb_checked > 0);
 
       if (ok) begin
-        $display("LAB_RESULT: PASS  (DUT=cpu_top TEST=%s scb_checked=%0d)",
-            get_type_name(), g_scb_checked);
+        `uvm_info({get_type_name(), ".LAB_RESULT"},
+            $sformatf("LAB_RESULT: PASS  (DUT=cpu_top TEST=%s scb_checked=%0d)",
+                get_type_name(), g_scb_checked),
+            UVM_LOW)
       end else begin
-        $display("LAB_RESULT: FAIL  (DUT=cpu_top TEST=%s scb_checked=%0d mismatches=%0d errors=%0d)",
-            get_type_name(), g_scb_checked, g_scb_mismatches,
-            srv.get_severity_count(UVM_ERROR));
-        // $fatal terminates before the runner's report_summarize:
-        // force the report (incl. the error triage table) first
-        srv.report_summarize();
-        $fatal(1, "lab test failed - see UVM_ERROR messages above");
+        // uvm_fatal prints the report summary (die -> report_summarize)
+        // and terminates with a non-zero exit code
+        `uvm_fatal({get_type_name(), ".LAB_RESULT"},
+            $sformatf("LAB_RESULT: FAIL  (DUT=cpu_top TEST=%s scb_checked=%0d mismatches=%0d errors=%0d)",
+                get_type_name(), g_scb_checked, g_scb_mismatches,
+                srv.get_severity_count(UVM_ERROR)))
       end
     endfunction : final_phase
   endclass : alu_base_test

@@ -19,6 +19,8 @@ module alu_tb_top;
     import alu_tb_pkg::*;
     import alu_test_pkg::*;
 
+    `include "uvm_macros.svh"
+
   // ---------------- clock / reset ----------------
   logic clk = 1'b0;
   logic rst = 1'b1;
@@ -79,7 +81,8 @@ module alu_tb_top;
     );
 `else
   initial begin
-    $fatal(1, "DUT not selected: expect +define+DUT_74381|DUT_74382|DUT_74381_16|DUT_74382_16");
+    `uvm_fatal("TB_TOP.DUT",
+        "DUT not selected: expect +define+DUT_74381|DUT_74382|DUT_74381_16|DUT_74382_16")
   end
 `endif
 
