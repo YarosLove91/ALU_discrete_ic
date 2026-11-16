@@ -24,6 +24,9 @@
 //   NUM_TRANSACTIONS   - alu_random_test vector count
 //   SMOKE_TRANSACTIONS - alu_smoke_test vector count
 //   SCB_MAX_LOG        - detailed mismatch log cap
+// Timing knobs (clock cycles):
+//   INIT_CYCLES        - idle clocks around register-file init
+//   DRAIN_CYCLES       - pipeline drain after the test body
 //
 // The lab has a single DUT (alu16, W = 16), so no DUT-selection
 // conditional compilation is required.
@@ -91,6 +94,21 @@ package alu_cfg_pkg;
   localparam int unsigned SCB_MAX_LOG = `ALU_CFG_SCB_MAX_LOG;
 `else
   localparam int unsigned SCB_MAX_LOG = 20;  // detailed mismatch log cap
+`endif
+
+  // --------------------------------------------------------
+  // Timing knobs (clock cycles, clk period = 10 ns)
+  // --------------------------------------------------------
+`ifdef ALU_CFG_INIT_CYCLES
+  localparam int unsigned INIT_CYCLES = `ALU_CFG_INIT_CYCLES;
+`else
+  localparam int unsigned INIT_CYCLES = 2;  // idle clocks around register-file init
+`endif
+
+`ifdef ALU_CFG_DRAIN_CYCLES
+  localparam int unsigned DRAIN_CYCLES = `ALU_CFG_DRAIN_CYCLES;
+`else
+  localparam int unsigned DRAIN_CYCLES = 20;  // pipeline drain: monitor -> fifo -> rfm -> scb
 `endif
 
 endpackage : alu_cfg_pkg

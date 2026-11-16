@@ -11,7 +11,7 @@
 // run_test() in alu_tb_top.
 // ============================================================
 
-  class alu_smoke_test extends alu_base_test;
+  class alu_smoke_test extends alu_start_reset;
     `uvm_component_utils(alu_smoke_test)
 
     function new(string name = "alu_smoke_test", uvm_component parent = null);

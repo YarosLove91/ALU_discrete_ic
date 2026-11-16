@@ -24,6 +24,7 @@ package alu_test_pkg;
 
   // the base test must be included first
   `include "alu_base_test.sv"
+  `include "alu_start_reset.sv"
   `include "alu_random_test.sv"
   `include "alu_smoke_test.sv"
 

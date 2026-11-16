@@ -10,7 +10,7 @@
 // +verilator+seed+<N>.
 // ============================================================
 
-  class alu_random_test extends alu_base_test;
+  class alu_random_test extends alu_start_reset;
     `uvm_component_utils(alu_random_test)
 
     function new(string name = "alu_random_test", uvm_component parent = null);

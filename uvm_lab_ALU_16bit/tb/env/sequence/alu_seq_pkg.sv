@@ -22,6 +22,7 @@ package alu_seq_pkg;
   `include "alu_transaction.sv"
   // the base sequence must be included first
   `include "alu_base_seq.sv"
+  `include "alu_reset_seq.sv"
   `include "alu_random_seq.sv"
 
 endpackage : alu_seq_pkg
